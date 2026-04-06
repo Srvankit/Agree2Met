@@ -1,19 +1,21 @@
-
-import React from 'react'
+import React from "react";
+import Navbar from "./components/navbar/Navbar";
+import Footer from "./components/footer/Footer";
 
 const App = () => {
   return (
+    <>
+      <Navbar />
 
-    <div>App</div>
-  )
-}
+      <main style={{ minHeight: "80vh" }}>
+        <h1 style={{ textAlign: "center", marginTop: "50px" }}>
+          Welcome to AutoTrust
+        </h1>
+      </main>
 
-export default App
-=======
-    <div>Hiiii</div>
-  )
-}
+      <Footer />
+    </>
+  );
+};
 
-export default App
-
->>>>>>> 6359aa4c034f6e800bbfee004d69fa92d0f50215
+export default App;
