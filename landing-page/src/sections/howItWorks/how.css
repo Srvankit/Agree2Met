@@ -1,0 +1,106 @@
+/* SECTION */
+.how-section {
+  background: #F9FAFB;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+/* CONTAINER */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* TITLE */
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.subtitle {
+  color: #6B7280;
+  margin-top: 10px;
+  margin-bottom: 50px;
+}
+
+/* CARDS GRID */
+.cards {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* CARD */
+.card {
+  background: #FFFFFF;
+  padding: 30px;
+  width: 300px;
+  border-radius: 16px;
+  position: relative;
+  text-align: left;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+/* HOVER EFFECT */
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+}
+
+/* STEP NUMBER (BACKGROUND STYLE) */
+.step-number {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 50px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.05);
+}
+
+/* ICON */
+.icon {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #3B82F6;
+}
+
+/* CARD TEXT */
+.card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card p {
+  margin-top: 10px;
+  color: #374151;
+  font-size: 14px;
+}
+
+/* UNDERLINE */
+.underline {
+  margin-top: 15px;
+  width: 30px;
+  height: 3px;
+  background: #3B82F6;
+  border-radius: 2px;
+}
+
+/* GUIDE LINK */
+.guide {
+  margin-top: 40px;
+}
+
+.guide a {
+  color: #1E3A8A;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.guide a:hover {
+  color: #1D4ED8;
+}
