@@ -2,35 +2,36 @@ import React from "react";
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
 
-// Pages
-import Home from "./pages/Home";
-
-// Sections
-import Features from "./components/Features/Features";
-import HowItWorks from "./components/HowItWorks/HowItWorks";
+// Sections (correct paths)
+import Hero from "./sections/hero/Hero";
+import Features from "./sections/features/Features";
+import HowItWorks from "./sections/howItWorks/HowItWorks";
+import Preview from "./sections/preview/Preview";
+import Testimonials from "./sections/testimonials/Testimonials";
 
 const App = () => {
   return (
     <>
       <Navbar />
 
-      <main style={{ minHeight: "80vh" }}>
+      <main>
 
-        {/* 🔥 HERO SECTION */}
-        <Home />
+        {/* 🔥 HERO */}
+        <Hero />
 
-        {/* 🚀 FEATURES SECTION */}
+        {/* 🚀 FEATURES */}
         <Features />
 
-        {/* ⚙️ HOW IT WORKS SECTION */}
+        {/* ⚙️ HOW IT WORKS */}
         <HowItWorks />
 
+        {/* 👀 PREVIEW */}
+        <Preview />
+
+        {/* 💬 TESTIMONIALS */}
+        <Testimonials />
+
       </main>
-
-
-        <h1 style={{ textAlign: "center", marginTop: "50px" }}>
-          Welcome to AutoTrust
-        </h1>
 
       <Footer />
     </>
