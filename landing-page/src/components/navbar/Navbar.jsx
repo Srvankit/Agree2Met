@@ -62,7 +62,7 @@ export default function Navbar() {
       {/* LEFT */}
       <div className="nav-left">
         <span className="logo-icon">✧</span>
-        <span className="logo-text">AutoTrust</span>
+        <span className="logo-text">Agree2Met</span>
       </div>
 
       {/* CENTER */}
