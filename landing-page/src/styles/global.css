@@ -1,0 +1,124 @@
+/* ===============================
+   🎨 COLOR VARIABLES (LIGHT MODE)
+================================ */
+:root {
+  --primary: #1E3A8A;
+  --secondary: #3B82F6;
+  --accent: #10B981;
+
+  --bg: #F9FAFB;
+  --card-bg: #FFFFFF;
+  --section-alt: #F1F5F9;
+
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
+}
+
+/* ===============================
+   🌙 DARK MODE
+================================ */
+body.dark {
+  --bg: #020617;
+  --card-bg: #0B1220;
+  --section-alt: #020617;
+
+  --text-primary: #E5E7EB;
+  --text-secondary: #CBD5F5;
+  --text-muted: #94A3B8;
+}
+
+/* ===============================
+   🧱 GLOBAL ELEMENTS
+================================ */
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* LINKS */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* BUTTON RESET */
+button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ===============================
+   📦 LAYOUT SYSTEM
+================================ */
+
+/* SECTION (FULL WIDTH BACKGROUND) */
+.section {
+  width: 100%;
+  padding: 100px 20px;
+}
+
+/* CONTAINER (CENTERED CONTENT) */
+.container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* ===============================
+   🔘 BUTTON STYLES
+================================ */
+
+.primary-btn {
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.primary-btn:hover {
+  background: #1D4ED8;
+}
+
+.secondary-btn {
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 12px 22px;
+  border-radius: 10px;
+  background: transparent;
+}
+
+/* ===============================
+   ✨ UTILITIES
+================================ */
+
+/* FLEX CENTER */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* TEXT CENTER */
+.text-center {
+  text-align: center;
+}
+
+/* HIDE SCROLLBAR */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===============================
+   📱 RESPONSIVE
+================================ */
+
+@media (max-width: 768px) {
+  .section {
+    padding: 70px 15px;
+  }
+}

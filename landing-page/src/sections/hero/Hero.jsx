@@ -1,78 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./hero.css";
 
-const Hero = () => {
-  const [open, setOpen] = useState(false);
+export default function Hero() {
+  const [openVideo, setOpenVideo] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.add("hero-loaded");
+  }, []);
 
   return (
-    <section className="hero" id="home">
+    <section className="hero">
 
-      {/* ===== BACKGROUND VIDEO ===== */}
-      <video
-        className="hero-video"
-        src="/images/hero-bg.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-      />
+      {/* BACKGROUND ORBS */}
+      <div className="orb orb1"></div>
+      <div className="orb orb2"></div>
+      <div className="orb orb3"></div>
 
-      {/* ===== OVERLAY ===== */}
-      <div className="hero-overlay"></div>
+      <div className="hero-content">
 
-      {/* ===== CONTENT ===== */}
-      <div className="hero-container">
+        <p className="hero-tag fade-up">SECURE & SMART AGREEMENT PLATFORM</p>
 
-        <p className="hero-tag">
-          SECURE & SMART AGREEMENT PLATFORM
-        </p>
-
-        <h1 className="hero-heading">
-          Create Agreements in <span>Minutes</span>, Not Hours
+        <h1 className="fade-up delay-1">
+          Create Agreements in <br />
+          <span>Minutes</span>, Not Hours
         </h1>
 
-        <p className="hero-subtext">
-          AutoTrust helps you generate, manage, and share professional agreements effortlessly.
+        <p className="hero-subtext fade-up delay-2">
+          AutoTrust helps you generate, manage, and share professional
+          agreements effortlessly.
         </p>
 
-        <button className="hero-btn">
-          Get Started Free →
-        </button>
+        <div className="hero-buttons fade-up delay-3">
+          <button className="primary-btn">Get Started Free →</button>
 
-        {/* ===== PREVIEW ===== */}
-        <div className="hero-preview">
-          <img src="/images/preview.png" alt="preview" />
-
-          <div className="play" onClick={() => setOpen(true)}>
-            ▶
-          </div>
+          <button
+            className="secondary-btn"
+            onClick={() => setOpenVideo(true)}
+          >
+            ▶ Watch Demo
+          </button>
         </div>
 
       </div>
 
-      {/* ===== VIDEO MODAL ===== */}
-      {open && (
-        <div className="video-modal" onClick={() => setOpen(false)}>
-
+      {/* VIDEO MODAL */}
+      {openVideo && (
+        <div className="video-modal" onClick={() => setOpenVideo(false)}>
           <div
             className="video-container"
             onClick={(e) => e.stopPropagation()}
           >
-            <span className="close" onClick={() => setOpen(false)}>
-              ×
-            </span>
+            <iframe
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+              title="Demo Video"
+              frameBorder="0"
+              allowFullScreen
+            ></iframe>
 
-            <video
-              src="/images/hero-bg.mp4"
-              controls
-              autoPlay
-            />
+            <button
+              className="close-btn"
+              onClick={() => setOpenVideo(false)}
+            >
+              ✕
+            </button>
           </div>
-
         </div>
       )}
+
     </section>
   );
-};
-
-export default Hero;
+}
