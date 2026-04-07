@@ -2,7 +2,8 @@ import React from "react";
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
 
-// Sections
+
+// Sections (correct paths)
 import Hero from "./sections/hero/Hero";
 import Features from "./sections/features/Features";
 import HowItWorks from "./sections/howItWorks/HowItWorks";
@@ -16,10 +17,20 @@ const App = () => {
 
       <main>
 
+
+        {/* 🔥 HERO */}
         <Hero />
+
+        {/* 🚀 FEATURES */}
         <Features />
+
+        {/* ⚙️ HOW IT WORKS */}
         <HowItWorks />
+
+        {/* 👀 PREVIEW */}
         <Preview />
+
+        {/* 💬 TESTIMONIALS */}
         <Testimonials />
 
       </main>
