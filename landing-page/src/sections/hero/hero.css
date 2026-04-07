@@ -1,0 +1,192 @@
+/* ===== HERO SECTION ===== */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== VIDEO BACKGROUND ===== */
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* ===== DARK OVERLAY ===== */
+.hero-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
+
+/* ===== CONTENT ===== */
+.hero-container {
+  position: relative;
+  z-index: 3;
+  max-width: 900px;
+  text-align: center;
+  padding: 20px;
+}
+
+/* ===== TAGLINE ===== */
+.hero-tag {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: #9CA3AF;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+/* ===== HEADING ===== */
+.hero-heading {
+  font-size: 56px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.hero-heading span {
+  color: #3B82F6;
+}
+
+/* ===== SUBTEXT ===== */
+.hero-subtext {
+  margin-top: 18px;
+  color: #D1D5DB;
+  font-size: 18px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===== BUTTON ===== */
+.hero-btn {
+  margin-top: 30px;
+  background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+  color: white;
+  padding: 14px 32px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.hero-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
+}
+
+/* ===== PREVIEW CARD ===== */
+.hero-preview {
+  margin-top: 60px;
+  position: relative;
+  display: inline-block;
+}
+
+/* IMAGE */
+.hero-preview img {
+  width: 500px;
+  max-width: 90%;
+  border-radius: 18px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  transition: 0.3s;
+}
+
+/* HOVER EFFECT */
+.hero-preview img:hover {
+  transform: scale(1.03);
+}
+
+/* ===== PLAY BUTTON ===== */
+.play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1E3A8A;
+  font-size: 22px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.play:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* ===== MODAL ===== */
+.video-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+/* VIDEO CONTAINER */
+.video-container {
+  position: relative;
+  width: 80%;
+  max-width: 900px;
+  background: black;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* VIDEO */
+.video-container video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* CLOSE BUTTON */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .hero-heading {
+    font-size: 36px;
+  }
+
+  .hero-subtext {
+    font-size: 16px;
+  }
+
+  .hero-preview img {
+    width: 100%;
+  }
+}
