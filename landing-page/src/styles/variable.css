@@ -1,0 +1,74 @@
+/* ===============================
+   🎨 COLOR SYSTEM (LIGHT MODE)
+================================ */
+:root {
+  /* Primary Brand */
+  --color-primary: #1E3A8A;
+  --color-primary-hover: #1D4ED8;
+  --color-secondary: #3B82F6;
+  --color-accent: #10B981;
+
+  /* Backgrounds */
+  --color-bg: #F9FAFB;
+  --color-card: #FFFFFF;
+  --color-section-alt: #F1F5F9;
+
+  /* Text */
+  --color-text-primary: #111827;
+  --color-text-secondary: #374151;
+  --color-text-muted: #6B7280;
+
+  /* Borders */
+  --color-border-light: #E5E7EB;
+
+  /* ===============================
+     ✨ SHADOWS
+  ================================ */
+  --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12);
+
+  /* ===============================
+     🔘 BORDER RADIUS
+  ================================ */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  /* ===============================
+     📏 SPACING SYSTEM
+  ================================ */
+  --spacing-xs: 6px;
+  --spacing-sm: 10px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --spacing-2xl: 80px;
+
+  /* ===============================
+     ⚡ TRANSITIONS
+  ================================ */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* ===============================
+   🌙 DARK MODE OVERRIDES
+================================ */
+body.dark {
+  --color-bg: #020617;
+  --color-card: #0B1220;
+  --color-section-alt: #020617;
+
+  --color-text-primary: #E5E7EB;
+  --color-text-secondary: #CBD5F5;
+  --color-text-muted: #94A3B8;
+
+  --color-border-light: rgba(255, 255, 255, 0.1);
+
+  /* Shadows (softer in dark mode) */
+  --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
