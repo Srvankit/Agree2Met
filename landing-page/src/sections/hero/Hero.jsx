@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";   // ✅ ADD THIS
 import "./hero.css";
 
 export default function Hero() {
   const [openVideo, setOpenVideo] = useState(false);
+  const navigate = useNavigate(); // ✅ ADD THIS
 
   useEffect(() => {
     document.body.classList.add("hero-loaded");
@@ -31,7 +33,14 @@ export default function Hero() {
         </p>
 
         <div className="hero-buttons fade-up delay-3">
-          <button className="primary-btn">Get Started Free →</button>
+
+          {/* 🔥 UPDATED BUTTON */}
+          <button
+            className="primary-btn"
+            onClick={() => navigate("/dashboard")}
+          >
+            Get Started Free →
+          </button>
 
           <button
             className="secondary-btn"
@@ -39,6 +48,7 @@ export default function Hero() {
           >
             ▶ Watch Demo
           </button>
+
         </div>
 
       </div>
