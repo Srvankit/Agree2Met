@@ -1,0 +1,13 @@
+.reminder {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+}
+
+.reminder button {
+  background: #10B981;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+}

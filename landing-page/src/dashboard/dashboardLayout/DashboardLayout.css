@@ -1,0 +1,102 @@
+.dashboard {
+  display: flex;
+  height: 100vh;
+  background: #F9FAFB;
+}
+
+/* MAIN */
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* CONTENT */
+.dashboard-content {
+  padding: 25px;
+}
+
+/* HEADER */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.actions button {
+  margin-left: 10px;
+}
+
+/* BUTTONS */
+.primary-btn {
+  background: #10B981;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+}
+
+.secondary-btn {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 10px 16px;
+  border-radius: 8px;
+}
+
+/* CARDS */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.highlight {
+  background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+  color: white;
+}
+
+/* GRID */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+/* ANALYTICS */
+.analytics {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+}
+
+.bars {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.bar {
+  width: 30px;
+  height: 80px;
+  background: #E5E7EB;
+  border-radius: 10px;
+}
+
+.bar.active {
+  height: 120px;
+  background: #10B981;
+}

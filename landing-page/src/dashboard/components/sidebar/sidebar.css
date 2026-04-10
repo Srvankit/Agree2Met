@@ -1,0 +1,22 @@
+.sidebar {
+  width: 240px;
+  background: #fff;
+  padding: 20px;
+  transition: 0.3s;
+}
+
+.sidebar.closed {
+  width: 70px;
+}
+
+.sidebar ul li {
+  margin: 15px 0;
+}
+
+.hamburger {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  cursor: pointer;
+  z-index: 100;
+}
