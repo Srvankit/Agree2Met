@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 // Landing Components
 import Navbar from "./components/navbar/Navbar";
@@ -12,45 +12,37 @@ import HowItWorks from "./sections/howItWorks/HowItWorks";
 import Preview from "./sections/preview/Preview";
 import Testimonials from "./sections/testimonials/Testimonials";
 
-// Temporary Dashboard Page
-const Dashboard = () => {
-  return (
-    <div style={{ padding: "40px" }}>
-      <h1>Dashboard UI</h1>
-    </div>
-  );
-};
+// ✅ REAL DASHBOARD
+import DashboardLayout from "./dashboard/dashboardLayout/DashboardLayout";
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
+    <Routes>
 
-        {/* 🌐 LANDING PAGE */}
-        <Route
-          path="/"
-          element={
-            <>
-              <Navbar />
+      {/* 🌐 LANDING PAGE */}
+      <Route
+        path="/"
+        element={
+          <>
+            <Navbar />
 
-              <main>
-                <Hero />
-                <Features />
-                <HowItWorks />
-                <Preview />
-                <Testimonials />
-              </main>
+            <main>
+              <Hero />
+              <Features />
+              <HowItWorks />
+              <Preview />
+              <Testimonials />
+            </main>
 
-              <Footer />
-            </>
-          }
-        />
+            <Footer />
+          </>
+        }
+      />
 
-        {/* 📊 DASHBOARD */}
-        <Route path="/dashboard" element={<Dashboard />} />
+      {/* 📊 DASHBOARD */}
+      <Route path="/dashboard" element={<DashboardLayout />} />
 
-      </Routes>
-    </Router>
+    </Routes>
   );
 };
 

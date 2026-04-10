@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";   // ✅ ADD THIS
+import { useNavigate } from "react-router-dom";
 import "./hero.css";
 
 export default function Hero() {
   const [openVideo, setOpenVideo] = useState(false);
-  const navigate = useNavigate(); // ✅ ADD THIS
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.body.classList.add("hero-loaded");
+
+    return () => {
+      document.body.classList.remove("hero-loaded");
+    };
   }, []);
 
   return (
@@ -20,7 +24,9 @@ export default function Hero() {
 
       <div className="hero-content">
 
-        <p className="hero-tag fade-up">SECURE & SMART AGREEMENT PLATFORM</p>
+        <p className="hero-tag fade-up">
+          SECURE & SMART AGREEMENT PLATFORM
+        </p>
 
         <h1 className="fade-up delay-1">
           Create Agreements in <br />
@@ -34,10 +40,13 @@ export default function Hero() {
 
         <div className="hero-buttons fade-up delay-3">
 
-          {/* 🔥 UPDATED BUTTON */}
+          {/* 🔥 FIXED BUTTON */}
           <button
             className="primary-btn"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => {
+              console.log("CLICKED");   // 👉 DEBUG
+              navigate("/dashboard");
+            }}
           >
             Get Started Free →
           </button>
@@ -53,11 +62,12 @@ export default function Hero() {
 
       </div>
 
-
       {/* VIDEO MODAL */}
       {openVideo && (
-        <div className="video-modal" onClick={() => setOpenVideo(false)}>
-
+        <div
+          className="video-modal"
+          onClick={() => setOpenVideo(false)}
+        >
           <div
             className="video-container"
             onClick={(e) => e.stopPropagation()}
@@ -67,6 +77,7 @@ export default function Hero() {
               src="https://www.youtube.com/embed/dQw4w9WgXcQ"
               title="Demo Video"
               frameBorder="0"
+              allow="autoplay; encrypted-media"
               allowFullScreen
             ></iframe>
 
@@ -76,6 +87,7 @@ export default function Hero() {
             >
               ✕
             </button>
+
           </div>
         </div>
       )}
@@ -83,4 +95,3 @@ export default function Hero() {
     </section>
   );
 }
-

@@ -310,14 +310,14 @@
 }
 
 /* VIDEO MODAL */
->>>>>>> 7949ba24a278b083b640fc6cef66461a02d29719
+
 .video-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-<<<<<<< HEAD
+
   background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
@@ -366,7 +366,6 @@
   .hero-preview img {
     width: 100%;
   }
-=======
 
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
@@ -407,5 +406,8 @@
 /* DARK MODE FIX */
 body.dark .hero::before {
   opacity: 0.4;
->>>>>>> 7949ba24a278b083b640fc6cef66461a02d29719
+
+}
+.orb {
+  pointer-events: none;
 }
