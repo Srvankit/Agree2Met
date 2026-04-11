@@ -1,44 +1,48 @@
 import React from "react";
+import { Routes, Route } from "react-router-dom";
+
+// Landing Components
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
 
-// Sections (correct paths)
+// Sections
 import Hero from "./sections/hero/Hero";
 import Features from "./sections/features/Features";
 import HowItWorks from "./sections/howItWorks/HowItWorks";
 import Preview from "./sections/preview/Preview";
 import Testimonials from "./sections/testimonials/Testimonials";
 
+// ✅ REAL DASHBOARD
+import DashboardLayout from "./dashboard/dashboardLayout/DashboardLayout";
 
 const App = () => {
   return (
-    <>
-      <Navbar />
+    <Routes>
 
+      {/* 🌐 LANDING PAGE */}
+      <Route
+        path="/"
+        element={
+          <>
+            <Navbar />
 
-      <main>
+            <main>
+              <Hero />
+              <Features />
+              <HowItWorks />
+              <Preview />
+              <Testimonials />
+            </main>
 
+            <Footer />
+          </>
+        }
+      />
 
-        {/* 🔥 HERO */}
-        <Hero />
+      {/* 📊 DASHBOARD */}
+      <Route path="/dashboard" element={<DashboardLayout />} />
 
-        {/* 🚀 FEATURES */}
-        <Features />
-
-        {/* ⚙️ HOW IT WORKS */}
-        <HowItWorks />
-
-        {/* 👀 PREVIEW */}
-        <Preview />
-
-        {/* 💬 TESTIMONIALS */}
-        <Testimonials />
-
-
-      </main>
-
-      <Footer />
-    </>
+    </Routes>
   );
 };
 

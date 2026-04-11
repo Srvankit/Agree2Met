@@ -1,11 +1,17 @@
-import React from 'react'
+import Hero from "../sections/hero/Hero";
+import Features from "../sections/features/Features";
+import HowItWorks from "../sections/howItWorks/HowItWorks";
+import Preview from "../sections/preview/Preview";
+import Testimonials from "../sections/testimonials/Testimonials";
 
-const Home = () => {
+export default function Home() {
   return (
-    <div>
-      Home 
-    </div>
-  )
+    <>
+      <Hero />
+      <Features />
+      <HowItWorks />
+      <Preview />
+      <Testimonials />
+    </>
+  );
 }
-
-export default Home
