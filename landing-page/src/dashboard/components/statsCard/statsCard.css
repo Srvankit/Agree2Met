@@ -1,0 +1,147 @@
+.stats-card {
+  flex: 1;
+  min-width: 240px;
+  padding: 22px;
+  border-radius: 18px; /* slightly more rounded */
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}   
+
+.stats-card.active {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+  border: none;
+}
+
+.stats-card.active .stats-title {
+  color: rgba(255,255,255,0.8);
+}
+
+.stats-card.active .stats-value {
+  color: white;
+}
+
+.stats-card.active .sub {
+  color: rgba(255,255,255,0.8);
+}
+
+.stats-card.active .badge {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.stats-card.active .arrow {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+/* TOP */
+.stats-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+/* ICON COLORS */
+.icon-box.green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.icon-box.blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.icon-box.orange {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+/* Arrow */
+.arrow {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #374151;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.arrow:hover {
+  transform: scale(1.6);
+}
+
+/* BODY */
+.stats-body {
+  margin-top: 16px;
+}
+
+.stats-title {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.stats-value {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 6px 0;
+}
+
+/* CHANGE */
+.stats-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* STATUS */
+.stats-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: orange;
+  border-radius: 50%;
+}

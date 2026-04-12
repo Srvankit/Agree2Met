@@ -1,24 +1,27 @@
-import "./chatbot.css";
-import { useState } from "react";
+import "./chatBot.css";
 
-const Chatbot = () => {
-  const [open, setOpen] = useState(false);
-
+const ChatBot = () => {
   return (
-    <div className="chatbot-container">
+    <div className="chatbot">
 
-      {open && (
-        <div className="chatbox">
-          <p>Hello 👋</p>
-        </div>
-      )}
+      {/* TOP CIRCLE (fake avatar) */}
+      <div className="chatbot-avatar">
+        🤖
+        <span className="status-dot"></span>
+      </div>
 
-      <div className="chat-icon" onClick={() => setOpen(!open)}>
-        💬
+      {/* BODY */}
+      <div className="chatbot-body">
+        <h4>Hi! I’m AutoTrust AI</h4>
+        <p>How can I help you today?</p>
+
+        <button className="chat-btn">
+          💬 Chat Now
+        </button>
       </div>
 
     </div>
   );
 };
 
-export default Chatbot;
+export default ChatBot;

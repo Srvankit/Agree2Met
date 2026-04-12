@@ -1,26 +1,75 @@
-import "./sidebar.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  FiHome,
+  FiFileText,
+  FiUsers,
+  FiClock,
+  FiSettings,
+  FiLogOut
+} from "react-icons/fi";
 
-const Sidebar = () => {
-  const [open, setOpen] = useState(true);
+import "./sidebar.css";
+
+export default function Sidebar({ open }) {
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   return (
-    <>
-      <div className="hamburger" onClick={() => setOpen(!open)}>☰</div>
+    <aside className={`sidebar ${open ? "open" : ""}`}>
 
-      <div className={`sidebar ${open ? "open" : "closed"}`}>
-        <h2>Agree2Met</h2>
+      {/* ===== TOP ===== */}
+      <div className="sidebar-top">
 
-        <ul>
-          <li className="active">Dashboard</li>
-          <li>Tasks</li>
-          <li>Calendar</li>
-          <li>Analytics</li>
-          <li>Team</li>
+        <h2 className="logo">AutoTrust</h2>
+
+        <ul className="sidebar-menu">
+          <li className="active"><FiHome /><span>Dashboard</span></li>
+          <li><FiFileText /><span>Agreements</span></li>
+          <li><FiUsers /><span>Members</span></li>
+          <li><FiClock /><span>Reminders</span></li>
+          <li><FiSettings /><span>Settings</span></li>
         </ul>
-      </div>
-    </>
-  );
-};
 
-export default Sidebar;
+      </div>
+
+      {/* ===== BOTTOM SECTION ===== */}
+      <div className="sidebar-bottom">
+
+        {/* THEME SWITCH */}
+        <div className="theme-switch">
+          <span>Theme</span>
+
+          <div
+            className={`toggle ${darkMode ? "active" : ""}`}
+            onClick={() => setDarkMode(!darkMode)}
+          >
+            <div className="circle"></div>
+          </div>
+        </div>
+
+        {/* PROFILE CARD */}
+        <div className="profile-card">
+          <div className="profile-info">
+            <div className="avatar">A</div>
+            <div>
+              <h4>Ayush Kumar</h4>
+              <p>Director</p>
+            </div>
+          </div>
+
+          <hr />
+
+          <div className="logout">
+            <FiLogOut />
+            <span>Log Out</span>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+  );
+}

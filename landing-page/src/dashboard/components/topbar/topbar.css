@@ -1,18 +1,92 @@
-.topbar {
+/* ===== TOPBAR ===== */
+.dashboard-wrapper .topbar {
   display: flex;
   justify-content: space-between;
-  padding: 15px;
-  background: white;
+  align-items: center;
+
+  height: 60px;
+  padding: 0 20px;
+  color: var(--text-primary);
+
+  background: var(--card-bg);
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.topbar input {
+/* ===== LEFT ===== */
+.dashboard-wrapper .topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ===== HAMBURGER ===== */
+.dashboard-wrapper .hamburger {
+  font-size: 18px;
+  cursor: pointer;
+
+  background: #f3f4f6;
+  padding: 8px 10px;
+  border-radius: 8px;
+
+  /* 🔥 FIX: REMOVE FIXED POSITION */
+  position: relative;
+  z-index: 2000;
+}
+
+/* ===== SEARCH ===== */
+.dashboard-wrapper .search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  background: #f3f4f6;
+  padding: 6px 12px;
+  border-radius: 10px;
+
+  width: 240px;
+}
+
+.dashboard-wrapper .search-bar input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  width: 100%;
+}
+
+/* ===== RIGHT ===== */
+.dashboard-wrapper .topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ===== ICON BUTTONS ===== */
+.dashboard-wrapper .icon-btn {
+  background: #f3f4f6;
   padding: 8px;
   border-radius: 8px;
-  border: 1px solid #ddd;
+  cursor: pointer;
+  display: flex;
 }
 
-.top-right {
+/* ===== PROFILE ===== */
+.dashboard-wrapper .profile {
   display: flex;
-  gap: 10px;
   align-items: center;
+  gap: 8px;
+}
+
+/* Avatar */
+.dashboard-wrapper .avatar {
+  width: 30px;
+  height: 30px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
 }

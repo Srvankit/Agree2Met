@@ -1,98 +1,126 @@
-import { useEffect } from "react";
-import Sidebar from "../components/Sidebar/Sidebar";
-import Topbar from "../components/Topbar/Topbar";
+import { useState } from "react";
+import Sidebar from "../components/sidebar/Sidebar";
+import Topbar from "../components/topbar/Topbar";
 import ReminderCard from "../components/remainderCard/RemainderCard";
-import Chatbot from "../components/Chatbot/Chatbot";
+import ChatBot from "../components/chatBot/ChatBot";
+import StatsCard from "../components/statsCard/StatsCard";
+import ProgressOverview from "../components/progressOverview/ProgressOverview";
+
 import "./DashboardLayout.css";
 
 const DashboardLayout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeCard, setActiveCard] = useState(0);
 
-  useEffect(() => {
-    document.body.classList.add("dashboard-loaded");
-
-    return () => {
-      document.body.classList.remove("dashboard-loaded");
-    };
-  }, []);
+  const stats = [
+    {
+      title: "Total Agreements",
+      value: 24,
+      icon: "📄",
+      change: "12%",
+      color: "green",
+    },
+    {
+      title: "Completed",
+      value: 10,
+      icon: "✔",
+      change: "8%",
+      color: "green",
+    },
+    {
+      title: "Running",
+      value: 12,
+      icon: "🔄",
+      change: "5%",
+      color: "blue",
+    },
+    {
+      title: "Pending",
+      value: 2,
+      icon: "⏰",
+      status: "On Discussion",
+      color: "orange",
+    },
+  ];
 
   return (
-    <div className="dashboard">
+    <div className="dashboard-wrapper">
+      <div className="dashboard">
 
-      {/* SIDEBAR */}
-      <Sidebar />
+        {/* SIDEBAR */}
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-      {/* MAIN */}
-      <div className="dashboard-main">
+        {/* OVERLAY */}
+        {sidebarOpen && (
+          <div
+            className="overlay"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-        <Topbar />
+        {/* MAIN */}
+        <div className="dashboard-main">
 
-        <div className="dashboard-content">
+          <Topbar setSidebarOpen={setSidebarOpen} />
 
-          {/* HEADER */}
-          <div className="dashboard-header fade-in">
-            <h2>Dashboard</h2>
+          <div className="dashboard-content">
 
-            <div className="actions">
-              <button className="primary-btn">+ Add Project</button>
-              <button className="secondary-btn">Import Data</button>
-            </div>
-          </div>
+            {/* HEADER */}
+            <div className="dashboard-header">
+              <div>
+                <h2>Dashboard</h2>
+                <p>Manage and track your agreements easily</p>
+              </div>
 
-          {/* CARDS */}
-          <div className="cards-grid">
-
-            <div className="card highlight card-animate">
-              <h4>Total Projects</h4>
-              <h2>24</h2>
-            </div>
-
-            <div className="card card-animate delay-1">
-              <h4>Ended</h4>
-              <h2>10</h2>
-            </div>
-
-            <div className="card card-animate delay-2">
-              <h4>Running</h4>
-              <h2>12</h2>
+              <div className="actions">
+                <button className="primary-btn">＋ New Agreement</button>
+                <button className="secondary-btn">⬇ Import Data</button>
+              </div>
             </div>
 
-            <div className="card card-animate delay-3">
-              <h4>Pending</h4>
-              <h2>2</h2>
+            {/* STATS */}
+            <div className="cards-grid">
+              {stats.map((item, index) => (
+                <StatsCard
+                  key={index}
+                  {...item}
+                  isActive={activeCard === index}
+                  onHover={() => setActiveCard(index)}
+                  onLeave={() => setActiveCard(0)}
+                />
+              ))}
             </div>
 
-          </div>
+            {/* MAIN GRID */}
+            <div className="dashboard-grid">
 
-          {/* ANALYTICS + RIGHT */}
-          <div className="dashboard-grid">
+              {/* LEFT SIDE */}
+              <div className="left-panel">
+                <div className="analytics">
+                  <h4>Agreement Analytics</h4>
 
-            {/* ANALYTICS */}
-            <div className="analytics fade-in delay-2">
+                  <div className="bars">
+                    <div className="bar"></div>
+                    <div className="bar active"></div>
+                    <div className="bar"></div>
+                    <div className="bar active"></div>
+                  </div>
+                </div>
+              </div>
 
-              <h4>Project Analytics</h4>
-
-              <div className="bars">
-                <div className="bar"></div>
-                <div className="bar active"></div>
-                <div className="bar"></div>
-                <div className="bar active"></div>
+              {/* RIGHT SIDE */}
+              <div className="right-panel">
+                <ReminderCard />
+                
               </div>
 
             </div>
-
-            {/* RIGHT PANEL */}
-            <div className="fade-in delay-3">
-              <ReminderCard />
-            </div>
-
+            
+              <ProgressOverview />
+              <ChatBot />
           </div>
-
         </div>
       </div>
-
-      {/* FLOATING CHATBOT */}
-      <Chatbot />
-
     </div>
   );
 };
