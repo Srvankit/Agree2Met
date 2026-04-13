@@ -44,7 +44,7 @@ const DashboardLayout = () => {
   ];
 
   return (
-    <div className="dashboard-wrapper">
+    <div className="dashboard-wrapper dashboard-theme">
       <div className="dashboard">
 
         {/* SIDEBAR */}
@@ -61,13 +61,14 @@ const DashboardLayout = () => {
         {/* MAIN */}
         <div className="dashboard-main">
 
+          {/* TOPBAR */}
           <Topbar setSidebarOpen={setSidebarOpen} />
 
           <div className="dashboard-content">
 
             {/* HEADER */}
             <div className="dashboard-header">
-              <div>
+              <div className="header-text">
                 <h2>Dashboard</h2>
                 <p>Manage and track your agreements easily</p>
               </div>
@@ -94,9 +95,9 @@ const DashboardLayout = () => {
             {/* MAIN GRID */}
             <div className="dashboard-grid">
 
-              {/* LEFT SIDE */}
+              {/* LEFT */}
               <div className="left-panel">
-                <div className="analytics">
+                <div className="analytics-card">
                   <h4>Agreement Analytics</h4>
 
                   <div className="bars">
@@ -108,16 +109,21 @@ const DashboardLayout = () => {
                 </div>
               </div>
 
-              {/* RIGHT SIDE */}
+              {/* RIGHT */}
               <div className="right-panel">
                 <ReminderCard />
-                
               </div>
 
             </div>
-            
+
+            {/* BOTTOM */}
+            <div className="bottom-grid">
               <ProgressOverview />
-              <ChatBot />
+            </div>
+
+            {/* CHATBOT */}
+            <ChatBot />
+
           </div>
         </div>
       </div>

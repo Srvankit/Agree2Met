@@ -1,37 +1,53 @@
 import StatsCard from "../../components/statsCard/StatsCard";
+import "./dashboardHome.css";
 
 const DashboardHome = () => {
   return (
-    <div className="dashboard-content">
+    <div className="dashboard-home">
 
-      <div className="stats-grid">
-        <StatsCard 
-          title="Total Agreements"
-          value="24"
-          icon="📄"
-          change="12%"
-          highlight
-        />
+      {/* 🔥 HEADER */}
+      <div className="dashboard-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Track and manage your agreements</p>
+        </div>
 
-        <StatsCard 
-          title="Completed"
-          value="10"
-          icon="✅"
-          change="8%"
-        />
+        <div className="dashboard-actions">
+          <button className="primary-btn">+ New Agreement</button>
+        </div>
+      </div>
 
-        <StatsCard 
-          title="Running"
-          value="12"
-          icon="🔄"
-          change="5%"
-        />
+      {/* 🔥 STATS SECTION */}
+      <div className="stats-wrapper glass-card">
+        <div className="stats-grid">
+          <StatsCard 
+            title="Total Agreements"
+            value="24"
+            icon="📄"
+            change="12%"
+            highlight
+          />
 
-        <StatsCard 
-          title="Pending"
-          value="2"
-          icon="⏳"
-        />
+          <StatsCard 
+            title="Completed"
+            value="10"
+            icon="✅"
+            change="8%"
+          />
+
+          <StatsCard 
+            title="Running"
+            value="12"
+            icon="🔄"
+            change="5%"
+          />
+
+          <StatsCard 
+            title="Pending"
+            value="2"
+            icon="⏳"
+          />
+        </div>
       </div>
 
     </div>

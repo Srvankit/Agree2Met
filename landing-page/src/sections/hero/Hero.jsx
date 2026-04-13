@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import "./hero.css";
 
 export default function Hero() {
@@ -8,10 +9,7 @@ export default function Hero() {
 
   useEffect(() => {
     document.body.classList.add("hero-loaded");
-
-    return () => {
-      document.body.classList.remove("hero-loaded");
-    };
+    return () => document.body.classList.remove("hero-loaded");
   }, []);
 
   return (
@@ -24,29 +22,43 @@ export default function Hero() {
 
       <div className="hero-content">
 
-        <p className="hero-tag fade-up">
+        <motion.p
+          className="hero-tag"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           SECURE & SMART AGREEMENT PLATFORM
-        </p>
+        </motion.p>
 
-        <h1 className="fade-up delay-1">
-          Create Agreements in <br />
-          <span>Minutes</span>, Not Hours
-        </h1>
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          Create Agreements <br />
+          <span>in Minutes</span>, Not Hours
+        </motion.h1>
 
-        <p className="hero-subtext fade-up delay-2">
+        <motion.p
+          className="hero-subtext"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           AutoTrust helps you generate, manage, and share professional
-          agreements effortlessly.
-        </p>
+          agreements effortlessly with speed and security.
+        </motion.p>
 
-        <div className="hero-buttons fade-up delay-3">
-
-          {/* 🔥 FIXED BUTTON */}
+        <motion.div
+          className="hero-buttons"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
           <button
             className="primary-btn"
-            onClick={() => {
-              console.log("CLICKED");   // 👉 DEBUG
-              navigate("/dashboard");
-            }}
+            onClick={() => navigate("/dashboard")}
           >
             Get Started Free →
           </button>
@@ -57,22 +69,17 @@ export default function Hero() {
           >
             ▶ Watch Demo
           </button>
-
-        </div>
+        </motion.div>
 
       </div>
 
       {/* VIDEO MODAL */}
       {openVideo && (
-        <div
-          className="video-modal"
-          onClick={() => setOpenVideo(false)}
-        >
+        <div className="video-modal" onClick={() => setOpenVideo(false)}>
           <div
             className="video-container"
             onClick={(e) => e.stopPropagation()}
           >
-
             <iframe
               src="https://www.youtube.com/embed/dQw4w9WgXcQ"
               title="Demo Video"
@@ -87,11 +94,9 @@ export default function Hero() {
             >
               ✕
             </button>
-
           </div>
         </div>
       )}
-
     </section>
   );
 }

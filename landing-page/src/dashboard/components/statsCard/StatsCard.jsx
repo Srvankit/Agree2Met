@@ -6,7 +6,6 @@ const StatsCard = ({
   icon,
   change,
   status,
-  color,
   isActive,
   onHover,
   onLeave
@@ -19,7 +18,7 @@ const StatsCard = ({
     >
       {/* TOP */}
       <div className="stats-top">
-        <div className={`icon-box ${color}`}>
+        <div className="icon-box">
           {icon}
         </div>
 

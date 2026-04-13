@@ -1,138 +1,208 @@
-/* ===== DASHBOARD ROOT ===== */
-.dashboard {
-  all: unset;
-  display: flex;
+/* ================================
+   🌌 GLOBAL DASHBOARD THEME
+================================ */
+/* ================================
+   🌌 GLOBAL DASHBOARD THEME (LIGHT)
+================================ */
+.dashboard-wrapper.dashboard-theme {
   min-height: 100vh;
-  background: #f5f7fb;
-}
-
-.dashboard-wrapper .dashboard {
   display: flex;
-  height: 100vh;
- background: var(--card-bg);
-color: var(--text-secondary);
+
+  background:
+    radial-gradient(circle at 20% 20%, rgba(59,130,246,0.08), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(16,185,129,0.06), transparent 40%),
+    linear-gradient(180deg, #F8FAFC, #EEF2F7);
+
+  color: #111827;
 }
 
-/* ===== MAIN ===== */
-.dashboard-wrapper .dashboard-main {
+body.dark .dashboard-wrapper.dashboard-theme {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(59,130,246,0.15), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(16,185,129,0.12), transparent 40%),
+    #020617;
+
+  color: #E5E7EB;
+}
+
+/* RESET OLD BREAKING STYLE */
+.dashboard {
+  display: flex;
   width: 100%;
+}
+
+/* ================================
+   🧱 MAIN LAYOUT
+================================ */
+.dashboard-main {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* ===== CONTENT ===== */
-.dashboard-wrapper .dashboard-content {
-   padding: 20px 20px;
-  padding-bottom: 160px;
-  padding-right: 20px;
+/* ================================
+   📦 CONTENT
+================================ */
+.dashboard-content {
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
 
-/* ===== HEADER ===== */
-.dashboard-wrapper .dashboard-header {
+/* ================================
+   🔥 HEADER
+================================ */
+.dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
 }
 
-.dashboard-wrapper .actions {
+.header-text h2 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.header-text p {
+  margin-top: 5px;
+  color: var(--color-text-muted);
+}
+
+/* ================================
+   🔘 ACTION BUTTONS
+================================ */
+.actions {
   display: flex;
-  flex-direction: row;   /* ensure horizontal */
   gap: 12px;
-  align-items: center;
 }
 
-/* ===== BUTTONS ===== */
-.dashboard-wrapper .primary-btn {
-  background: #16a34a;
+.primary-btn {
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
   color: white;
   padding: 10px 18px;
   border-radius: 10px;
   border: none;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dashboard-wrapper .primary-btn:hover {
-  background: #15803d;
-  transform: translateY(-1px);
-}
-
-.dashboard-wrapper .dashboard-wrapper .secondary-btn {
-  background: white;
-  border: 1px solid #d1d5db;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-} 
-
-/* ===== CARDS ===== */
-.dashboard-wrapper .cards-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.dashboard-wrapper .card {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   transition: 0.3s;
 }
 
-.dashboard-wrapper .card:hover {
-  transform: translateY(-5px);
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(59,130,246,0.4);
 }
 
-.dashboard-wrapper .highlight {
-  background: linear-gradient(135deg, #1E3A8A, #3B82F6);
-  color: white;
+.secondary-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--color-text-primary);
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
-/* ===== GRID ===== */
-.dashboard-wrapper .dashboard-grid {
+/* ================================
+   📊 STATS GRID
+================================ */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* ================================
+   📐 MAIN GRID
+================================ */
+.dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 320px;
-  gap: 30px;
+  gap: 25px;
 }
 
-/* LEFT SIDE */
-.left-panel {
-  width: 100%;
+/* ================================
+   📊 ANALYTICS CARD
+================================ */
+.analytics-card {
+  backdrop-filter: blur(12px);
+  padding: 20px;
+  border-radius: 16px;
+  background: white;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
-/* RIGHT SIDE */
+.analytics-card h4 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* BARS */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.bar {
+  width: 26px;
+  height: 70px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  transition: 0.3s;
+}
+
+.bar.active {
+  height: 120px;
+  background: linear-gradient(180deg, #10B981, #059669);
+}
+
+/* ================================
+   📦 RIGHT PANEL
+================================ */
 .right-panel {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* ===== ANALYTICS ===== */
-.dashboard-wrapper .analytics {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
+/* ================================
+   📉 BOTTOM SECTION
+================================ */
+.bottom-grid {
+  margin-top: 10px;
 }
 
-.dashboard-wrapper .bars {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
+/* ================================
+   🌫 OVERLAY
+================================ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 5;
 }
 
-.dashboard-wrapper .bar {
-  width: 30px;
-  height: 80px;
-  background: #E5E7EB;
-  border-radius: 10px;
+/* ================================
+   📱 RESPONSIVE
+================================ */
+@media (max-width: 1100px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.dashboard-wrapper .bar.active {
-  height: 120px;
-  background: #10B981;
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 20px;
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
