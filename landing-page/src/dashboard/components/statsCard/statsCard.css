@@ -1,5 +1,5 @@
 /* ============================= */
-/* ===== STATS CARD FINAL ===== */
+/* ===== STATS CARD FINAL CLEAN */
 /* ============================= */
 
 .stats-card {
@@ -9,23 +9,23 @@
   cursor: pointer;
   overflow: hidden;
 
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08); ;
 
   transition: all 0.3s ease;
 }
 
-/* ===== HOVER BASE ===== */
+/* ===== HOVER ===== */
 .stats-card:hover {
   transform: translateY(-6px) scale(1.02);
-  border: 1px solid rgba(0, 122, 255, 0.5);
+  border: 1px solid rgba(0, 122, 255, 0.4);
   box-shadow: 0 12px 35px rgba(0, 122, 255, 0.25);
 }
 
-/* ===== ACTIVE CARD (MAIN BLUE SYSTEM) ===== */
+/* ===== ACTIVE ===== */
 .stats-card.active {
   background: linear-gradient(
     135deg,
@@ -42,26 +42,31 @@
   transform: scale(1.03);
 }
 
-/* ===== GRID INTERACTION SYSTEM ===== */
-/* fade others */
+/* ============================= */
+/* ===== INTERACTION SYSTEM ===== */
+/* ============================= */
+
+/* reduce fade strength */
 .stats-grid:hover .stats-card {
-  opacity: 0.5;
-  transform: scale(0.98);
+  opacity: 0.9;
 }
 
 /* focused card */
 .stats-grid .stats-card:hover {
   opacity: 1;
-  transform: scale(1.03);
+  transform: translateY(-6px) scale(1.03);
   z-index: 2;
 }
 
-/* blur background cards */
+/* very subtle blur */
 .stats-grid:hover .stats-card:not(:hover) {
-  filter: blur(2px);
+  filter: blur(0.5px);
 }
 
+/* ============================= */
 /* ===== INNER GLOW ===== */
+/* ============================= */
+
 .stats-card::before {
   content: "";
   position: absolute;
@@ -70,7 +75,7 @@
   background: linear-gradient(
     120deg,
     transparent,
-    rgba(0, 122, 255, 0.1),
+    rgba(0, 122, 255, 0.08),
     transparent
   );
   opacity: 0;
@@ -82,7 +87,7 @@
 }
 
 /* ============================= */
-/* ===== TOP SECTION ===== */
+/* ===== TOP ===== */
 /* ============================= */
 
 .stats-top {
@@ -91,7 +96,7 @@
   align-items: center;
 }
 
-/* ===== ICON BOX ===== */
+/* ICON */
 .icon-box {
   width: 42px;
   height: 42px;
@@ -103,23 +108,22 @@
 
   font-size: 18px;
 
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255,255,255,0.15);
 
   transition: 0.3s;
 }
 
-/* active icon glow */
 .stats-card.active .icon-box {
   background: rgba(0, 122, 255, 0.25);
   border: 1px solid rgba(0,122,255,0.6);
   box-shadow: 0 0 20px rgba(0,122,255,0.4);
 }
 
-/* ===== ARROW ===== */
+/* ARROW */
 .arrow {
   font-size: 14px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.6);
   transition: 0.3s;
 }
 
@@ -129,30 +133,30 @@
 }
 
 /* ============================= */
-/* ===== BODY SECTION ===== */
+/* ===== BODY ===== */
 /* ============================= */
 
 .stats-body {
   margin-top: 14px;
 }
 
-/* ===== TITLE ===== */
+/* TITLE */
 .stats-title {
   font-size: 13px;
-  color: rgba(255,255,255,0.6);
+  color: #1f2937;
   margin-bottom: 6px;
 }
 
-/* ===== VALUE ===== */
+/* VALUE */
 .stats-value {
   font-size: 26px;
   font-weight: 600;
-  color: #ffffff;
+  color:#1f2937;;
   letter-spacing: -0.5px;
 }
 
 /* ============================= */
-/* ===== CHANGE SECTION ===== */
+/* ===== CHANGE ===== */
 /* ============================= */
 
 .stats-change {
@@ -163,7 +167,7 @@
 }
 
 .badge {
-  background: rgba(0, 255, 170, 0.15);
+  background: rgba(0, 255, 170, 0.2);
   color: #00ffaa;
   font-size: 11px;
   padding: 4px 8px;
@@ -172,7 +176,7 @@
 
 .sub {
   font-size: 11px;
-  color: rgba(255,255,255,0.5);
+  color: #6b7280;
 }
 
 /* ============================= */
@@ -182,8 +186,8 @@
 .stats-status {
   margin-top: 8px;
   font-size: 12px;
-  color: rgba(255,255,255,0.6);
-
+ color: #374151;
+font-weight: 500;
   display: flex;
   align-items: center;
   gap: 6px;

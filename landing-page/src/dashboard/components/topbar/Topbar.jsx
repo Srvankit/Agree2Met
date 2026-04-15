@@ -1,14 +1,7 @@
-import { useState, useEffect } from "react";
 import { FiSearch, FiBell } from "react-icons/fi";
 import "./topbar.css";
 
 const Topbar = ({ setSidebarOpen }) => {
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    document.body.classList.toggle("dark-theme", darkMode);
-  }, [darkMode]);
-
   return (
     <div className="topbar">
 
@@ -22,9 +15,9 @@ const Topbar = ({ setSidebarOpen }) => {
           ☰
         </div>
 
-        <div className="search-bar">
-          <FiSearch />
-          <input type="text" placeholder="Search agreements..." />
+        <div className="search-box">
+          <FiSearch className="search-icon" />
+          <input type="text" placeholder="Search..." />
         </div>
 
       </div>
@@ -32,15 +25,13 @@ const Topbar = ({ setSidebarOpen }) => {
       {/* RIGHT */}
       <div className="topbar-right">
 
-        {/* Notification */}
         <div className="icon-btn">
           <FiBell />
         </div>
 
-        {/* Profile */}
         <div className="profile">
           <div className="avatar">A</div>
-          <span>Ankit</span>
+          <span className="username">Ankit</span>
         </div>
 
       </div>

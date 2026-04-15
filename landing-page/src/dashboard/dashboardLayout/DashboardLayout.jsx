@@ -102,9 +102,12 @@ const DashboardLayout = () => {
 
                   <div className="bars">
                     <div className="bar"></div>
-                    <div className="bar active"></div>
-                    <div className="bar"></div>
-                    <div className="bar active"></div>
+                        <div className="bar active"></div>
+                        <div className="bar"></div>
+                        <div className="bar active"></div>
+                        <div className="bar"></div>
+                        <div className="bar active"></div>
+                        <div className="bar"></div>
                   </div>
                 </div>
               </div>
@@ -118,7 +121,9 @@ const DashboardLayout = () => {
 
             {/* BOTTOM */}
             <div className="bottom-grid">
-              <ProgressOverview />
+              <div className="progress-wrapper">
+                  <ProgressOverview />
+               </div>
             </div>
 
             {/* CHATBOT */}

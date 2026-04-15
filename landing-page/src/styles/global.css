@@ -142,10 +142,6 @@ button {
   color: #ffffff;
 }
 
-/* ensure text stays white inside dashboard */
-.dashboard-container * {
-  color: inherit;
-}
 
 /* ===============================
    🔝 TOPBAR (FIX WHITE STRIP)
