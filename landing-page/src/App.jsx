@@ -7,18 +7,22 @@ import Footer from "./components/footer/Footer";
 import AuthModal   from "./components/Auth/AuthModel";
 
 // Sections
+
 import Hero from "./sections/hero/Hero";
 import Features from "./sections/features/Features";
 import HowItWorks from "./sections/howItWorks/HowItWorks";
 import Preview from "./sections/preview/Preview";
 import Testimonials from "./sections/testimonials/Testimonials";
 
+
 // ✅ REAL DASHBOARD
 import DashboardLayout from "./dashboard/dashboardLayout/DashboardLayout";
+
 
 const App = () => {
   return (
     <Routes>
+
 
       {/* 🌐 LANDING PAGE */}
       <Route
@@ -44,6 +48,7 @@ const App = () => {
       <Route path="/dashboard" element={<DashboardLayout />} />
 
     </Routes>
+
   );
 };
 
