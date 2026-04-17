@@ -1,4 +1,5 @@
 import "./preview.css";
+import { motion } from "framer-motion";
 
 export default function Preview() {
   return (
@@ -7,7 +8,13 @@ export default function Preview() {
       <div className="preview-container">
 
         {/* LEFT CONTENT */}
-        <div className="preview-content">
+        <motion.div
+          className="preview-content"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
 
           <span className="preview-tag">
             PRODUCT PREVIEW
@@ -18,15 +25,21 @@ export default function Preview() {
             <span>in Action</span>
           </h2>
 
-          <p>
+          <p className="preview-desc">
             Create, manage, and share agreements seamlessly with a clean,
             intuitive interface built for speed and trust.
           </p>
 
           <ul className="preview-points">
-            <li>⚡ Instant agreement generation</li>
-            <li>🔒 Secure & reliable workflow</li>
-            <li>📄 Clean structured documents</li>
+            <li>
+              <span>⚡</span> Instant agreement generation
+            </li>
+            <li>
+              <span>🔒</span> Secure & reliable workflow
+            </li>
+            <li>
+              <span>📄</span> Clean structured documents
+            </li>
           </ul>
 
           <div className="preview-buttons">
@@ -38,24 +51,47 @@ export default function Preview() {
             </button>
           </div>
 
-        </div>
+        </motion.div>
 
         {/* RIGHT IMAGE */}
-        <div className="preview-image">
+        <motion.div
+          className="preview-image"
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+
           <div className="image-wrapper">
-            <img src="/images/preview.png" alt="Preview UI" />
+            <img
+              src="/images/preview.png"
+              alt="AutoTrust Dashboard Preview"
+            />
           </div>
 
-          {/* Floating cards (premium feel) */}
-          <div className="floating-card card-1">
-            ⚡ Fast Processing
-          </div>
+          {/* FLOATING CARDS (REFINED) */}
+          {/* FLOATING TAGS CLOUD */}
+            <div className="floating-cloud">
 
-          <div className="floating-card card-2">
-            🔒 Secure System
-          </div>
+              <div className="floating-card card-1">⚡ Fast Processing</div>
+              <div className="floating-card card-2">🔒 Secure System</div>
+              <div className="floating-card card-3">📄 Smart Templates</div>
+              <div className="floating-card card-4">⚙️ Automation</div>
+              <div className="floating-card card-5">🔗 Easy Sharing</div>
+              <div className="floating-card card-6">📊 Analytics</div>
+              <div className="floating-card card-7">🧠 AI Drafting</div>
+              <div className="floating-card card-8">☁️ Cloud Sync</div>
+              <div className="floating-card card-9">🛡️ Data Protection</div>
+              <div className="floating-card card-10">⚡ Instant Export</div>
+              <div className="floating-card card-11">📁 Organized Docs</div>
+              <div className="floating-card card-12">🔍 Smart Search</div>
 
-        </div>
+            </div>
+
+          {/* NEW: subtle glow */}
+          <div className="preview-glow"></div>
+
+        </motion.div>
 
       </div>
 

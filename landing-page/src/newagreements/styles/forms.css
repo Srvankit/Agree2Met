@@ -1,0 +1,45 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f9ea8, #7dd3fc);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  width: 1200px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.form-body {
+  padding: 30px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+}
+
+.btn.primary {
+  background: #6366f1;
+  color: white;
+}
+
+.btn.ghost {
+  background: #e2e8f0;
+}
+
+.btn.success {
+  background: #10b981;
+  color: white;
+}

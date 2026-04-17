@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import "./navbar.css";
 
 export default function Navbar() {
@@ -9,7 +10,6 @@ export default function Navbar() {
   /* LOAD THEME */
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-
     if (savedTheme === "dark") {
       document.body.classList.add("dark");
       setDarkMode(true);
@@ -18,17 +18,13 @@ export default function Navbar() {
 
   /* TOGGLE THEME */
   const toggleTheme = () => {
-    if (darkMode) {
-      document.body.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    } else {
-      document.body.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    }
+    document.body.classList.toggle("dark");
+    const newTheme = !darkMode ? "dark" : "light";
+    localStorage.setItem("theme", newTheme);
     setDarkMode(!darkMode);
   };
 
-  /* SCROLL SHADOW */
+  /* SCROLL EFFECT */
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -56,8 +52,19 @@ export default function Navbar() {
     return () => sections.forEach((sec) => observer.unobserve(sec));
   }, []);
 
+  /* SMOOTH SCROLL */
+  const handleScrollTo = (id) => {
+    const el = document.getElementById(id);
+    el?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
+    <motion.nav
+      className={`navbar ${scrolled ? "scrolled" : ""}`}
+      initial={{ y: -60, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
 
       {/* LEFT */}
       <div className="nav-left">
@@ -67,23 +74,32 @@ export default function Navbar() {
 
       {/* CENTER */}
       <div className="nav-center">
-        <a href="#features" className={active === "features" ? "active" : ""}>Features</a>
-        <a href="#how" className={active === "how" ? "active" : ""}>How it works</a>
-        <a href="#preview" className={active === "preview" ? "active" : ""}>Preview</a>
-        <a href="#testimonials" className={active === "testimonials" ? "active" : ""}>Testimonials</a>
-        <a href="#contact" className={active === "contact" ? "active" : ""}>Contact Us</a>
+        {["features", "how", "preview", "testimonials", "contact"].map((id) => (
+          <button
+            key={id}
+            onClick={() => handleScrollTo(id)}
+            className={active === id ? "active" : ""}
+          >
+            {id === "how"
+              ? "How it works"
+              : id.charAt(0).toUpperCase() + id.slice(1)}
+          </button>
+        ))}
       </div>
 
       {/* RIGHT */}
       <div className="nav-right">
         <button className="login-btn">Login</button>
-        <button className="signup-btn">Sign Up</button>
+
+        <button className="signup-btn">
+          Get Started
+        </button>
 
         <button className="theme-toggle" onClick={toggleTheme}>
           {darkMode ? "☀️" : "🌙"}
         </button>
       </div>
 
-    </nav>
+    </motion.nav>
   );
 }

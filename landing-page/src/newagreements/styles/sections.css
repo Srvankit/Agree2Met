@@ -1,0 +1,99 @@
+.section {
+  display: flex;
+  gap: 30px;
+  padding: 30px;
+}
+
+/* LEFT */
+.form-left {
+  flex: 2;
+}
+
+/* RIGHT IMAGE */
+.form-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-right img {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* HEADINGS */
+h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.divider {
+  margin: 25px 0 10px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 5px;
+}
+
+/* INPUTS */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #6366f1;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+}
+
+/* PARTY GRID */
+.party-grid {
+  display: flex;
+  gap: 20px;
+}
+
+/* PARTY CARD */
+.party-card {
+  flex: 1;
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 14px;
+  transition: all 0.25s ease;
+}
+
+.party-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* DATE */
+.date-grid {
+  display: flex;
+  gap: 20px;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  .section {
+    flex-direction: column;
+  }
+
+  .party-grid {
+    flex-direction: column;
+  }
+
+  .date-grid {
+    flex-direction: column;
+  }
+}

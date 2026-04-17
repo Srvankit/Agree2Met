@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 // Landing Components
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
+import AuthModal   from "./components/Auth/AuthModel";
 
 // Sections
 import Hero from "./sections/hero/Hero";

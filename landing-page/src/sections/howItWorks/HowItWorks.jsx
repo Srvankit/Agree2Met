@@ -22,15 +22,26 @@ export default function HowItWorks() {
   return (
     <section className="how-section" id="how">
 
+      {/* HEADER */}
       <div className="how-header">
+        <p className="section-tag">HOW IT WORKS</p>
         <h2>How AutoTrust Works</h2>
         <p>Create and manage agreements in just a few simple steps.</p>
       </div>
 
+      {/* STEPS */}
       <div className="how-container">
-
         {steps.map((step, index) => (
-          <div className="how-card" key={index}>
+          <div
+            className={`how-row ${index % 2 !== 0 ? "reverse" : ""}`}
+            key={index}
+          >
+
+           <div className="how-image">
+  <div className="image-box">
+    <img src={step.img} alt={step.title} />
+  </div>
+</div>
 
             {/* TEXT */}
             <div className="how-text">
@@ -42,19 +53,11 @@ export default function HowItWorks() {
               <p>{step.desc}</p>
             </div>
 
-            {/* IMAGE */}
-            <div className="how-image">
-              <div className="image-box">
-                <img src={step.img} alt={step.title} />
-              </div>
-            </div>
-
           </div>
         ))}
-
       </div>
 
-      {/* 🔥 GUIDE LINK */}
+      {/* FOOTER */}
       <div className="how-footer">
         <a href="#">View detailed guide →</a>
       </div>

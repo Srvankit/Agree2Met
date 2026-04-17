@@ -1,14 +1,4 @@
-.dashboard {
-  display: flex;
-  height: 100vh;
-  background: #F9FAFB;
-}
 
-/* MAIN */
-.dashboard-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 /* CONTENT */
@@ -17,86 +7,224 @@
 }
 
 /* HEADER */
+=======
+  gap: 16px;
+}
+
+/* ================================
+   📦 CONTENT (FIXED ALIGNMENT)
+================================ */
+.dashboard-content {
+  padding: 0 16px;   /* 🔥 KEY FIX */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ================================
+   🔥 HEADER (ALIGNED WITH TOPBAR)
+================================ */
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+
+
+  margin-top: 4px;
 }
 
-.actions button {
-  margin-left: 10px;
+.header-text h2 {
+  font-size: 24px;  /* slightly tighter */
+  font-weight: 600;
 }
 
-/* BUTTONS */
+.header-text p {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ================================
+   🔘 ACTION BUTTONS
+================================ */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .primary-btn {
-  background: #10B981;
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
   color: white;
-  padding: 10px 16px;
+  padding: 8px 16px;   /* 👈 reduced */
   border-radius: 8px;
+  font-size: 13px;
   border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59,130,246,0.35);
 }
 
 .secondary-btn {
-  background: #fff;
-  border: 1px solid #ddd;
-  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.1);
+  color: #374151;
+  padding: 8px 14px;
   border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
 }
 
-/* CARDS */
+/* ================================
+   📊 STATS GRID
+================================ */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 25px;
+  gap: 16px;  /* tighter */
 }
 
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  transition: 0.3s;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-}
-
-.highlight {
-  background: linear-gradient(135deg, #1E3A8A, #3B82F6);
-  color: white;
-}
-
-/* GRID */
+/* ================================
+   📐 MAIN GRID
+================================ */
+/* ================================
+   📐 MAIN GRID (FIX SPACING)
+================================ */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;              /* 👈 slightly more breathing */
+  margin-top: 12px;       /* 👈 gap from stats cards */
 }
 
-/* ANALYTICS */
-.analytics {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
+/* ================================
+   📊 LEFT PANEL (CONTROL WIDTH)
+================================ */
+.left-panel {
+  display: flex;
 }
 
+/* ================================
+   📊 ANALYTICS CARD (UPGRADED)
+================================ */
+.analytics-card {
+  width: 100%;
+  max-width: 365px;       /* 👈 prevents full stretch */
+
+  padding: 14px 16px;
+  border-radius: 16px;
+
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(0,0,0,0.06);
+
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+
+  transition: all 0.25s ease;
+}
+
+.analytics-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px rgba(0,0,0,0.1);
+}
+
+/* ================================
+   📊 HEADER
+================================ */
+.analytics-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ================================
+   📊 BARS (UPGRADED)
+================================ */
+/* container height reference */
 .bars {
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 16px;
+  height: 220px;   /* 👈 controls full graph height */
+}
+
+/* base bars */
+.bar {
+  width: 30px;
+  height: 80%;
+  border-radius: 10px;
+
+  background: rgba(6, 93, 233, 0.15);
+
+  transition: all 0.3s ease;
+}
+
+/* different heights (realistic variation) */
+.bar:nth-child(1) { height: 40%; }
+.bar:nth-child(2) { height: 75%; }
+.bar:nth-child(3) { height: 50%; }
+.bar:nth-child(4) { height: 95%; }
+.bar:nth-child(5) { height: 60%; }
+.bar:nth-child(6) { height: 80%; }
+.bar:nth-child(7) { height: 55%; }
+
+/* active styling */
+.bar.active {
+ background: linear-gradient(
+    180deg,
+    #34d399,
+    #059669
+  );
+  box-shadow: 0 8px 25px rgba(16,185,129,0.4);
 }
 
 .bar {
-  width: 30px;
-  height: 80px;
-  background: #E5E7EB;
+  animation: fadeIn 0.5s ease;
+}
+
+.bar:nth-child(2) { animation-delay: 0.05s; }
+.bar:nth-child(3) { animation-delay: 0.1s; }
+.bar:nth-child(4) { animation-delay: 0.15s; }
+
+/* hover */
+.bar:hover {
+  transform: scale(1.15);
+}
+
+/* glow overlay */
+.bar.active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    to top,
+    rgba(255,255,255,0.25),
+    transparent
+  );
+
   border-radius: 10px;
 }
 
-.bar.active {
-  height: 120px;
-  background: #10B981;
+.bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;              /* 👈 IMPORTANT */
+  margin-top: 12px;
+}
+
+/* STRICT COLUMN CONTROL */
+.progress-wrapper {
+  grid-column: 2 / span 2;
+  display: flex;
+
 }
