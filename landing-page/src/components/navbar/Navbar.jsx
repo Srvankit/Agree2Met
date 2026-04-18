@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import "./navbar.css";
 
-export default function Navbar() {
+export default function Navbar({ openAuth }) {
   const [active, setActive] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -89,7 +89,7 @@ export default function Navbar() {
 
       {/* RIGHT */}
       <div className="nav-right">
-        <button className="login-btn">Login</button>
+        <button className="login-btn" onClick={openAuth}>Login</button>
 
         <button className="signup-btn">
           Get Started
