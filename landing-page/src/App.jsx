@@ -21,20 +21,18 @@ const App = () => {
 
   return (
     <>
-      {/* 🔥 GLOBAL MODAL */}
-      <AuthModal
-        isOpen={authOpen}
-        onClose={() => setAuthOpen(false)}
-      />
 
+      {/* ✅ ROUTES */}
       <Routes>
+
 
         {/* 🌐 LANDING PAGE */}
         <Route
           path="/"
           element={
             <>
-              <Navbar openAuth={() => setAuthOpen(true)} />
+              <Navbar openAuth={() => setAuthOpen(true)} /> {/* 🔥 IMPORTANT */}
+
 
               <main>
                 <Hero />
@@ -53,6 +51,13 @@ const App = () => {
         <Route path="/dashboard" element={<DashboardLayout />} />
 
       </Routes>
+
+
+      {/* ✅ GLOBAL AUTH MODAL */}
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+      />
     </>
   );
 };

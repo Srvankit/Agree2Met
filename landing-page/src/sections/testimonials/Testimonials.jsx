@@ -2,7 +2,7 @@
 
   const testimonials = [
     {
-      name: "Sarah Jenkins",
+      name: "Sarah ",
       role: "COO, FinTech Core",
       text: "Agree2Met has cut our contract turnaround time from 5 days to 4 hours. The interface is simply stunning.",
       img: "https://randomuser.me/api/portraits/women/44.jpg"
