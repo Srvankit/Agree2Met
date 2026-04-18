@@ -17,10 +17,11 @@ import Testimonials from "./sections/testimonials/Testimonials";
 import DashboardLayout from "./dashboard/dashboardLayout/DashboardLayout";
 
 const App = () => {
-  const [authOpen, setAuthOpen] = useState(false); // ✅ KEY
+  const [authOpen, setAuthOpen] = useState(false);
 
   return (
     <>
+      {/* ✅ ROUTES */}
       <Routes>
 
         {/* 🌐 LANDING PAGE */}
@@ -28,7 +29,7 @@ const App = () => {
           path="/"
           element={
             <>
-              <Navbar openAuth={() => setAuthOpen(true)} /> {/* ✅ PASS FUNCTION */}
+              <Navbar openAuth={() => setAuthOpen(true)} /> {/* 🔥 IMPORTANT */}
 
               <main>
                 <Hero />
