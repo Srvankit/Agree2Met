@@ -103,3 +103,4 @@ export default function Navbar({ openAuth }) {
     </motion.nav>
   );
 }
+
