@@ -13,10 +13,12 @@
   align-items: center;
   justify-content: space-between;
 
+
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(16px);
 
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
 
   transition: all 0.3s ease;
 }
@@ -36,14 +38,17 @@
 }
 
 .logo-icon {
+
   font-size: 20px;
   background: linear-gradient(135deg, #3B82F6, #6366F1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+
 }
 
 .logo-text {
   font-size: 20px;
+
   font-weight: 700;
   color: #0f172a;
 }
@@ -140,11 +145,13 @@
 
   cursor: pointer;
 
+
   transition: all 0.25s ease;
   box-shadow: 0 8px 20px rgba(59,130,246,0.25);
 }
 
 .signup-btn:hover {
+
   transform: translateY(-2px);
   box-shadow: 0 12px 30px rgba(59,130,246,0.35);
 }
@@ -200,5 +207,7 @@ body.dark .login-btn {
 }
 
 body.dark .theme-toggle {
+
   background: #0b1220;
+
 }
