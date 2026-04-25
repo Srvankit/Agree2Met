@@ -4,17 +4,17 @@ import "./how.css";
 const steps = [
   {
     title: "Fill in Your Details",
-    desc: "Enter party details, terms, and agreement specifics using a simple guided form.",
+    desc: "Provide party details, terms, and key agreement information through a simple and guided interface.",
     img: "https://images.unsplash.com/photo-1556745757-8d76bdb6984b"
   },
   {
     title: "Generate Agreement",
-    desc: "AutoTrust instantly creates a structured, professional agreement.",
+    desc: "Agree2Met automatically generates a structured and professional agreement based on your inputs.",
     img: "https://images.unsplash.com/photo-1581090700227-4c4f50f4c4c4"
   },
   {
     title: "Download or Share",
-    desc: "Download your agreement or securely share it with others.",
+    desc: "Download your finalized agreement or securely share it with others for review and collaboration.",
     img: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d"
   }
 ];
@@ -29,8 +29,8 @@ export default function HowItWorks() {
         {/* HEADER */}
         <div className="how-header">
           <p className="section-tag">HOW IT WORKS</p>
-          <h2>How AutoTrust Works</h2>
-          <p>Create and manage agreements in just a few simple steps.</p>
+          <h2>How Agree2Met Simplifies Your Agreements</h2>
+          <p>Create, manage, and share agreements in a few simple and guided steps.</p>
         </div>
 
         {/* STEPS */}
@@ -68,7 +68,7 @@ export default function HowItWorks() {
             className="guide-btn"
             onClick={() => setShowGuide(true)}
           >
-            <span>View Detailed Guide</span>
+            <span>Explore the full process</span>
             <span className="arrow">→</span>
           </button>
         </div>
