@@ -2,18 +2,18 @@ import "./features.css";
 
 const features = [
   {
-    title: "Easy Agreement Creation",
-    desc: "Create agreements quickly using a simple, guided form interface.",
+    title: "Effortless Agreement Creation",
+    desc: "Create agreements quickly using a guided interface designed for clarity and accuracy.",
     image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
   },
   {
-    title: "Instant Generation",
-    desc: "Generate structured, professional agreements in seconds.",
+    title: "Instant Document Generation",
+    desc: "Generate structured, professional agreements in seconds without manual drafting.",
     image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
   },
   {
-    title: "Secure Storage",
-    desc: "Your agreements are safely stored and easily accessible anytime.",
+    title: "Secure & Reliable Storage",
+    desc: "Safely store your agreements and access them anytime, anywhere with complete security.",
     image: "https://images.unsplash.com/photo-1518770660439-4636190af475",
   },
 ];
@@ -27,11 +27,11 @@ const Features = () => {
         <p className="section-tag">FEATURES</p>
 
         <h2 className="features-title">
-          Everything You Need to <span>Build Trust</span>
+          Everything You Need to <span>Create and Manage Agreements</span>
         </h2>
 
         <p className="features-subtitle">
-          AutoTrust provides powerful tools to create, manage, and share agreements effortlessly.
+          Agree2Met provides smart, reliable tools to create, organize, and manage professional agreements with ease.
         </p>
       </div>
 

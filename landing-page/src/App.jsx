@@ -8,7 +8,6 @@ import AuthModal from "./components/Auth/AuthModel";
 
 
 // Sections
-
 import Hero from "./sections/hero/Hero";
 import Features from "./sections/features/Features";
 import HowItWorks from "./sections/howItWorks/HowItWorks";
@@ -18,7 +17,6 @@ import Testimonials from "./sections/testimonials/Testimonials";
 
 // Dashboard
 import DashboardLayout from "./dashboard/dashboardLayout/DashboardLayout";
-
 
 const App = () => {
   const [authOpen, setAuthOpen] = useState(false);

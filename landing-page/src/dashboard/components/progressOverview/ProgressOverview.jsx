@@ -4,26 +4,29 @@ const ProgressOverview = () => {
   return (
     <div className="progress-card">
 
-      {/* LEFT SIDE */}
-      <div className="progress-left">
-        <div className="circle">
-          <div className="inner">
-            <h2>41%</h2>
-            <p>Agreements Completed</p>
-          </div>
-        </div>
+      {/* HEADER */}
+      <div className="progress-title">
+        <h3>Agreement Progress</h3>
+        <p>Track agreement completion status in real time</p>
       </div>
-    
-      {/* RIGHT SIDE */}
+
+      {/* PROGRESS CONTENT */}
       <div className="progress-right">
 
         {/* Completed */}
         <div className="progress-item">
           <div className="progress-header">
-            <span className="dot green"></span>
-            <span>Completed</span>
-            <span className="count">10 Agreements</span>
+            <div className="left">
+              <span className="dot green"></span>
+              <span>Completed</span>
+            </div>
+
+            <div className="right">
+              <span className="percent">41%</span>
+              <span className="count">10 Agreements</span>
+            </div>
           </div>
+
           <div className="progress-bar">
             <div className="fill green" style={{ width: "41%" }}></div>
           </div>
@@ -32,10 +35,17 @@ const ProgressOverview = () => {
         {/* Running */}
         <div className="progress-item">
           <div className="progress-header">
-            <span className="dot blue"></span>
-            <span>Running</span>
-            <span className="count">12 Agreements</span>
+            <div className="left">
+              <span className="dot blue"></span>
+              <span>Running</span>
+            </div>
+
+            <div className="right">
+              <span className="percent">60%</span>
+              <span className="count">12 Agreements</span>
+            </div>
           </div>
+
           <div className="progress-bar">
             <div className="fill blue" style={{ width: "60%" }}></div>
           </div>
@@ -44,10 +54,17 @@ const ProgressOverview = () => {
         {/* Pending */}
         <div className="progress-item">
           <div className="progress-header">
-            <span className="dot orange"></span>
-            <span>Pending</span>
-            <span className="count">2 Agreements</span>
+            <div className="left">
+              <span className="dot orange"></span>
+              <span>Pending</span>
+            </div>
+
+            <div className="right">
+              <span className="percent">20%</span>
+              <span className="count">2 Agreements</span>
+            </div>
           </div>
+
           <div className="progress-bar">
             <div className="fill orange" style={{ width: "20%" }}></div>
           </div>
