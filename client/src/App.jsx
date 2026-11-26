@@ -29,6 +29,11 @@ import { AgreementsPage } from './pages/agreements/AgreementsPage.jsx';
 import { AgreementDetailPage } from './pages/agreements/AgreementDetailPage.jsx';
 import { AgreementWizard } from './pages/agreements/AgreementWizard.jsx';
 import { ArchivePage } from './pages/archive/ArchivePage.jsx';
+import { DocumentsPage } from './pages/documents/DocumentsPage.jsx';
+import { TemplatesPage } from './pages/templates/TemplatesPage.jsx';
+import { DeadlinesPage } from './pages/deadlines/DeadlinesPage.jsx';
+import { NotificationsPage } from './pages/notifications/NotificationsPage.jsx';
+import { AnalyticsPage } from './pages/analytics/AnalyticsPage.jsx';
 import { PublicSigningPage } from './pages/signing/PublicSigningPage.jsx';
 
 export default function App() {
@@ -82,6 +87,11 @@ export default function App() {
                     <Route path="agreements/new" element={<AgreementWizard />} />
                     <Route path="agreements/:id" element={<AgreementDetailPage />} />
                     <Route path="agreements/:id/edit" element={<AgreementWizard />} />
+                    <Route path="documents" element={<DocumentsPage />} />
+                    <Route path="templates" element={<TemplatesPage />} />
+                    <Route path="deadlines" element={<DeadlinesPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
+                    <Route path="analytics" element={<AnalyticsPage />} />
                     <Route path="archive" element={<ArchivePage />} />
                   </Route>
 
