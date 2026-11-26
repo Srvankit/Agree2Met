@@ -26,6 +26,7 @@ import { ComponentShowcase } from './pages/dev/ComponentShowcase.jsx';
 
 import { DashboardPage } from './pages/dashboard/DashboardPage.jsx';
 import { AgreementsPage } from './pages/agreements/AgreementsPage.jsx';
+import { AgreementWizard } from './pages/agreements/AgreementWizard.jsx';
 import { ArchivePage } from './pages/archive/ArchivePage.jsx';
 
 export default function App() {
@@ -75,6 +76,8 @@ export default function App() {
                   >
                     <Route path="dashboard" element={<DashboardPage />} />
                     <Route path="agreements" element={<AgreementsPage />} />
+                    <Route path="agreements/new" element={<AgreementWizard />} />
+                    <Route path="agreements/:id/edit" element={<AgreementWizard />} />
                     <Route path="archive" element={<ArchivePage />} />
                   </Route>
 
