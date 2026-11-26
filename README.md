@@ -143,10 +143,34 @@ Run all backend integration and unit tests:
 ```powershell
 npm test --prefix server
 ```
-Run all frontend component and API client tests:
+Run all frontend component and API client tests (39 tests passed):
 ```powershell
 npm test --prefix client
 ```
+
+### Frontend Application Routes & Living Showcase
+The frontend Single Page Application is fully built with accessible CSS Modules and interactive mock services on branch `feat/frontend-ui`:
+
+| Route | Description |
+|---|---|
+| `/` | Marketing landing page with value proposition, interactive mock preview, and SES legal notice |
+| `/login` | Authentication page with one-click demo login autofill |
+| `/register`, `/verify-email`, `/forgot-password`, `/reset-password` | Complete auth lifecycle screens |
+| `/app/dashboard` | Executive KPI cards, sparklines, volume trends (`LineChart`), status breakdown (`DonutChart`), category distribution (`BarChart`), deadlines, and crypto integrity indicator |
+| `/app/agreements` | Agreement repository with grid/table view toggle, search, status & category filters, bulk actions, and pagination |
+| `/app/agreements/new` | 6-step creation wizard (Details, Parties, Terms with AI drafter, Milestones, Paper Review, Dispatch) |
+| `/app/agreements/:id` | Agreement detail view with 7 tabs, including in-browser SHA-256 tamper-evident audit verifier and "Simulate Tamper" button |
+| `/sign/:token` | Public guest signing portal with mandatory legal consent checkbox, signature canvas pad, and certificate generation |
+| `/app/documents` | Storage utilization progress bar and central agreement documents repository |
+| `/app/templates` | Standard legal template library with clause preview drawer and 1-click wizard launcher |
+| `/app/deadlines` | Deadlines & reminders management with interactive `Calendar` view |
+| `/app/notifications` | Real-time notification center with category filtering and unread tracking |
+| `/app/analytics` | Contract lifecycle intelligence with RFC 4180 CSV export |
+| `/app/ai` | Dedicated AI assistant hub with clause drafter, risk & obligation analyzer, and chat |
+| `/app/team` | Team member roster, role badges, and invitation modal with RoleGuard |
+| `/app/settings` | User profile, organization settings, password change, 2FA toggle, appearance theme toggle, and JSON backup export |
+| `/dev/components` | Living accessible UI component library showcase |
+| `/status` | Diagnostic system health probe calling backend `/api/v1/health` |
 
 ### Lint and Production Build
 ```powershell
