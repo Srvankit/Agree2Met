@@ -1,21 +1,39 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { FileQuestion, ArrowLeft, Home } from 'lucide-react';
+import { Button } from '../components/ui/Button/Button';
+import styles from './errors/Errors.module.css';
 
 export function NotFoundPage() {
+  const navigate = useNavigate();
+
   return (
-    <div style={{ maxWidth: '600px', margin: '64px auto', textAlign: 'center', padding: '0 24px' }}>
-      <h1 style={{ fontSize: '3rem', marginBottom: '12px' }}>404</h1>
-      <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-        The requested page does not exist.
-      </p>
-      <Link
-        to="/"
-        style={{
-          color: 'var(--color-accent)',
-          fontWeight: 500,
-        }}
-      >
-        &larr; Return to Home
-      </Link>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={`${styles.iconWrapper} ${styles.info}`}>
+          <FileQuestion size={36} />
+        </div>
+        <div className={styles.code}>404</div>
+        <h1 className={styles.title}>Page Not Found</h1>
+        <p className={styles.description}>
+          The requested page or contract link does not exist, has expired, or was relocated.
+        </p>
+        <div className={styles.actions}>
+          <Button
+            variant="secondary"
+            leftIcon={ArrowLeft}
+            onClick={() => navigate(-1)}
+          >
+            Go Back
+          </Button>
+          <Button
+            variant="primary"
+            leftIcon={Home}
+            onClick={() => navigate('/')}
+          >
+            Return to Home
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
