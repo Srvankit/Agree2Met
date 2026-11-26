@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Agree2Met — Digital Agreement Management SaaS Platform" />
     <title>Agree2Met — Digital Agreement Management SaaS</title>
+    <!-- Inline anti-flash script to guarantee instant theme application -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('agree2met_theme');
+          var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
