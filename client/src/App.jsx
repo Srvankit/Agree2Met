@@ -1,3 +1,4 @@
+// Agree2Met Client App Root (HMR/Watch verified)
 import { Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage.jsx';
 import { StatusPage } from './pages/StatusPage.jsx';

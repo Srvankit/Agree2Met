@@ -31,11 +31,21 @@ The local development environment runs containerized backing services defined in
 |---|---|---|---|---|
 | **PostgreSQL 16** | `agree2met-postgres` | **5433** | 5432 | Relational DB (*Port 5433 avoided host port 5432 collision*) |
 | **Redis 7** | `agree2met-redis` | **6379** | 6379 | In-memory queue broker & cache |
-| **S3 Storage** | `agree2met-storage` | **9000** | 8000 | S3 API endpoint (Bucket: `agree2met-dev`) |
+| **S3 Storage** | `agree2met-storage` | **9000** | 8000 | S3 API endpoint (Bucket: `agree2met-dev`, powered by Zenko CloudServer) |
 | **Mailpit SMTP** | `agree2met-mailpit` | **1025** | 1025 | Local SMTP catcher port |
 | **Mailpit UI** | `agree2met-mailpit` | **8025** | 8025 | Web inspection UI for dispatched emails |
 | **Express API** | Host Node Process | **5000** | 5000 | Backend REST API (`/api/v1`) |
 | **React Client** | Host Vite Process | **5173** | 5173 | Frontend Single Page Application |
+
+> [!NOTE]
+> **S3-Compatible Storage Selection: Scality CloudServer (`zenko/cloudserver:latest`) vs MinIO:**
+> Due to Docker Hub pulling restrictions on official MinIO images and authentication gates on quay.io, Agree2Met adopts `zenko/cloudserver` for local development. It is 100% open-source, requires zero registry credentials, and implements standard AWS S3 REST endpoints (`@aws-sdk/client-s3`).
+> 
+> **Production Behavior Differences (AWS S3 vs. Cloudflare R2 vs. Zenko):**
+> - **Bucket ACLs:** Zenko supports local `PutBucketAcl`. AWS S3 uses Bucket Owner Enforced policies (ACLs disabled by default), while Cloudflare R2 does not implement ACL APIs at all. Our `storage.service.ts` gracefully handles ACL rejections.
+> - **URL Addressing:** Zenko requires `forcePathStyle: true` (`http://localhost:9000/bucket/key`), AWS S3 uses virtual-host addressing (`https://bucket.s3.region.amazonaws.com/key`), and Cloudflare R2 uses account-specific endpoints (`https://<account-id>.r2.cloudflarestorage.com/bucket/key`).
+> - **Presigned URLs:** All three support AWS SigV4 presigned download/upload URLs (default 300s expiry). Expiration is enforced by the storage engine on request.
+> - **Data Egress:** AWS S3 incurs standard egress fees; Cloudflare R2 features zero data egress fees.
 
 ---
 

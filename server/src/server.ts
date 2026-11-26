@@ -1,3 +1,4 @@
+// Agree2Met HTTP Server Runtime (HMR/Watch verified)
 import { app } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';

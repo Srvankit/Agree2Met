@@ -175,15 +175,35 @@ Integrate the **Google Gemini API** strictly via the **Node.js backend service**
 
 ---
 
-## ADR-009: File Storage Strategy & Access Control
+## ADR-009: File Storage Strategy, S3 Engine Selection & Access Control
 
 ### Context
 Agreement PDFs, signature assets, and user avatars must be stored securely, encrypted at rest, and protected from unauthorized public access without forward dependency issues.
 
 ### Decision
-Provision an **S3-Compatible Object Storage Abstraction** (MinIO for local development, AWS S3 / Cloudflare R2 for production) in **Phase 1** using **Private Buckets and Time-Limited Signed URLs**.
+Provision an **S3-Compatible Object Storage Abstraction** in **Phase 1** using **Private Buckets and Time-Limited Presigned URLs**:
+- **Local Development:** Scality CloudServer (`zenko/cloudserver:latest`).
+- **Production Environments:** AWS S3 or Cloudflare R2.
 
-### Rationale
+### Local S3 Implementation: Why `zenko/cloudserver` instead of MinIO
+- **Registry Availability & Licensing:** The official `minio/minio` image on Docker Hub has been restricted and quay.io images intermittently require authenticated pull credentials, causing pipeline fragility. `zenko/cloudserver` is a fully open-source, robust S3 API server that pulls without authentication, initializes instantly, and adheres to the AWS S3 REST specification.
+- **SDK Compatibility:** Tested and verified against `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` with `forcePathStyle: true`.
+
+### Behavioral Differences & Production Considerations (AWS S3 vs. Cloudflare R2 vs. Zenko)
+1. **ACL Handling & Bucket Creation:**
+   - *Zenko:* Accepts standard `CreateBucket` and `PutBucketAcl` commands locally.
+   - *AWS S3:* Recommended setting is "Bucket Owner Enforced" (ACLs disabled). Object privacy is enforced via AWS Block Public Access and IAM bucket policies. The `storage.service.ts` gracefully ignores ACL command rejections.
+   - *Cloudflare R2:* Does not implement S3 ACL APIs (`PutBucketAcl` returns an unsupported operation error). Buckets are private by default, and access is governed by Cloudflare API tokens.
+2. **Addressing Style (Path-Style vs. Virtual-Hosted):**
+   - *Zenko / Local:* Requires `forcePathStyle: true` (`http://localhost:9000/agree2met-dev/<key>`).
+   - *AWS S3:* Uses virtual-hosted URLs (`https://<bucket>.s3.<region>.amazonaws.com/<key>`).
+   - *Cloudflare R2:* Uses account-scoped endpoints (`https://<account-id>.r2.cloudflarestorage.com/<bucket>/<key>`).
+3. **Presigned URL Signatures & Expiration:**
+   - Both AWS S3, Cloudflare R2, and Zenko CloudServer support AWS SigV4 signed URLs (`getSignedUrl`). Expiration (default 300 seconds / 5 minutes) is enforced by the storage engine on request.
+4. **Egress & Economics:**
+   - AWS S3 imposes outbound data transfer fees; Cloudflare R2 features zero data egress fees, which may be advantageous for high-volume agreement viewing and downloads.
+
+### Rationale & Security Rules
 - Initializing S3 storage in Phase 1 allows Phase 3 user avatar uploads, Phase 6 compiled PDFs, and Phase 7 signature images to persist immediately to permanent object storage.
 - Private buckets prevent unauthorized scraping or search engine indexing of confidential legal agreements.
-- Access is granted exclusively through short-lived (5-minute) signed download URLs or backend streaming proxy following strict tenant authorization checks.
+- Access is granted exclusively through short-lived (5-minute) signed download URLs or backend streaming proxy following strict tenant authorization checks. All tokens are omitted from URL query strings.

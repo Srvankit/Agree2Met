@@ -12,7 +12,7 @@
 | Phase | Phase Name | Status | Completion % | Sign-off Date | Blocking Dependencies |
 |---|---|---|---|---|---|
 | **Phase 0** | **Product Discovery & Planning** | **APPROVED & SIGNED OFF** | **100%** | Nov 2026 | None |
-| **Phase 1** | **Foundation & Development Infrastructure** | **COMPLETED & VERIFIED** | **100%** | Nov 2026 | None (Fully Verified) |
+| **Phase 1** | **Foundation & Development Infrastructure** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
 | Phase 2 | UI Design System & Component Library (CSS Modules) | Pending | 0% | — | Requires Phase 1 (Unblocked) |
 | Phase 3 | Authentication & User Management (HttpOnly Cookies) | Pending | 0% | — | Requires Phase 2 |
 | Phase 4 | Dashboard & Analytics Engine (Real DB Aggregations) | Pending | 0% | — | Requires Phase 3 |
@@ -48,11 +48,27 @@
 
 ## 3. Phase 1 Verification Metrics
 
-- **Server Test Suite:** 6 test files, 16 passing tests (100% pass rate).
+- **Server Test Suite:** 7 test files, 18 passing tests (100% pass rate). Includes unit tests for env validation, response envelopes, CSRF enforcement, and integration tests for storage operations, email dispatch, health reporting, and production dev-route guarding.
 - **Client Test Suite:** 2 test files, 5 passing tests (100% pass rate).
 - **Type Checking & Build:** `tsc` compiled server with 0 errors; `vite build` compiled client bundle with 0 errors.
 - **Code Quality:** ESLint verified 0 errors across server TypeScript files and client JavaScript/JSX files.
 - **End-to-End System Probe:** Live Express server + BullMQ worker probe verified HTTP 200 health check, S3 upload/download/delete, CSRF rejection/acceptance, email enqueue, worker dispatch, and Mailpit delivery confirmation.
+
+---
+
+## 4. Phase 1 Close-Out Verification Results
+
+| Item # | Verification Check | Command / Method | Result | Status |
+|---|---|---|---|---|
+| **1** | Docker Compose Services Health | `docker compose ps` | All 4 services (`agree2met-postgres`, `agree2met-redis`, `agree2met-storage`, `agree2met-mailpit`) running and healthy | PASSED |
+| **2** | S3 Bucket Privacy & Presigned URLs | `scratch/test-bucket-privacy.ts` | Direct unauthenticated object fetch and bucket listing return 403 `AccessDenied`. Valid presigned URL returns 200. Expired presigned URL returns 403. | PASSED |
+| **3** | npm audit Analysis & Remediation | `npm audit --prefix server`<br>`npm audit --prefix client` | Critical `tinypool` prototype pollution mitigated via `overrides`. High `nodemailer` (v10 breaking), `zod` (v4 alpha), and moderate `react-router` (v7 breaking) documented with technical justifications. | PASSED |
+| **4** | Git Repository Hygiene & First Commit | `git status`<br>`git check-ignore -v .env server/.env` | Clean working tree. `.env` and `server/.env` verified ignored. Zero secrets committed. Commit `7cc6f6e` created. | PASSED |
+| **5** | Production Guard on Dev Routes | `dev-routes.test.ts` | `POST /api/v1/dev/test-email` verified to return 404 `NOT_FOUND` when `NODE_ENV=production`. Automated test passing. | PASSED |
+| **6** | CSRF Enforcement vs. ADR-004 | `csrf.middleware.ts` & `csrf.test.ts` | Mutating requests enforce custom `X-Requested-With: XMLHttpRequest` or `X-CSRF-Token`. Double-submit token mismatch checked. Cookie generation deferred to Phase 3 auth. | PASSED |
+| **7** | Dev Servers & Live HMR Reload | `npm run dev` (client & server) | Server on port 5000, Client on port 5173. Edits trigger automatic tsx restart and Vite HMR update. Status page displays live 4-dependency health. | PASSED |
+| **8** | Storage Engine Documentation | ADR-009 & `README.md` | Documented `zenko/cloudserver` selection over MinIO due to Docker Hub restrictions, plus production behavior differences (AWS S3 vs Cloudflare R2). | PASSED |
+| **9** | Phase 1 Status Update | `DEVELOPMENT_PROGRESS.md` | Phase 1 marked **COMPLETE** only after all 8 preceding items verified with real outputs. | PASSED |
 
 ---
 
