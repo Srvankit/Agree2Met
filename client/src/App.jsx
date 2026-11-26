@@ -34,6 +34,7 @@ import { TemplatesPage } from './pages/templates/TemplatesPage.jsx';
 import { DeadlinesPage } from './pages/deadlines/DeadlinesPage.jsx';
 import { NotificationsPage } from './pages/notifications/NotificationsPage.jsx';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage.jsx';
+import { AIAssistantPage } from './pages/ai/AIAssistantPage.jsx';
 import { PublicSigningPage } from './pages/signing/PublicSigningPage.jsx';
 
 export default function App() {
@@ -92,6 +93,7 @@ export default function App() {
                     <Route path="deadlines" element={<DeadlinesPage />} />
                     <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="analytics" element={<AnalyticsPage />} />
+                    <Route path="ai" element={<AIAssistantPage />} />
                     <Route path="archive" element={<ArchivePage />} />
                   </Route>
 
