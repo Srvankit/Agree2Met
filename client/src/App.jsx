@@ -35,6 +35,8 @@ import { DeadlinesPage } from './pages/deadlines/DeadlinesPage.jsx';
 import { NotificationsPage } from './pages/notifications/NotificationsPage.jsx';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage.jsx';
 import { AIAssistantPage } from './pages/ai/AIAssistantPage.jsx';
+import { TeamPage } from './pages/team/TeamPage.jsx';
+import { SettingsPage } from './pages/settings/SettingsPage.jsx';
 import { PublicSigningPage } from './pages/signing/PublicSigningPage.jsx';
 
 export default function App() {
@@ -94,6 +96,8 @@ export default function App() {
                     <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="analytics" element={<AnalyticsPage />} />
                     <Route path="ai" element={<AIAssistantPage />} />
+                    <Route path="team" element={<TeamPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
                     <Route path="archive" element={<ArchivePage />} />
                   </Route>
 
