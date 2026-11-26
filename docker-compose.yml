@@ -1,0 +1,89 @@
+# Agree2Met Local Development Infrastructure
+name: agree2met-infra
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agree2met-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agree2met}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agree2met_dev_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-agree2met_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agree2met} -d ${POSTGRES_DB:-agree2met_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: agree2met-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  storage:
+    image: zenko/cloudserver:latest
+    container_name: agree2met-storage
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /data /metadata && yarn start"]
+    environment:
+      SCALITY_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY:-minioadmin}
+      SCALITY_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY:-minioadmin}
+      S3DATAPATH: /data
+      S3METADATAPATH: /metadata
+      REMOTE_MANAGEMENT_DISABLE: 1
+    ports:
+      - "9000:8000"
+    volumes:
+      - minio_data:/data
+      - minio_metadata:/metadata
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'const http = require(\"http\"); http.get(\"http://localhost:8000/\", res => { process.exit(res.statusCode < 500 ? 0 : 1); }).on(\"error\", () => process.exit(1));'"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: agree2met-mailpit
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web UI & HTTP API
+    volumes:
+      - mailpit_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8025/api/v1/info || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
+    name: agree2met_postgres_data
+  redis_data:
+    name: agree2met_redis_data
+  minio_data:
+    name: agree2met_minio_data
+  minio_metadata:
+    name: agree2met_minio_metadata
+  mailpit_data:
+    name: agree2met_mailpit_data
