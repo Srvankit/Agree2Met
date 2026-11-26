@@ -1,0 +1,108 @@
+.timeline {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.eventItem {
+  display: flex;
+  gap: var(--space-3);
+  position: relative;
+  min-height: 48px;
+}
+
+.markerCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.markerDot {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.innerDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--accent-color);
+}
+
+.markerDot.success {
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+}
+
+.markerDot.warning {
+  background-color: var(--color-warning-soft);
+  color: var(--color-warning);
+  border-color: var(--color-warning-border);
+}
+
+.markerDot.danger {
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+
+.line {
+  flex: 1;
+  width: 2px;
+  background-color: var(--border-color);
+  margin: 4px 0;
+}
+
+.lastItem .line {
+  display: none;
+}
+
+.contentCol {
+  flex: 1;
+  padding-bottom: var(--space-4);
+}
+
+.topRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--font-size-14);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+}
+
+.time {
+  font-size: var(--font-size-12);
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.description {
+  font-size: var(--font-size-13);
+  color: var(--text-muted);
+  margin: var(--space-1) 0 0 0;
+  line-height: var(--line-height-normal);
+}
+
+.metadataBox {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--bg-surface-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-12);
+}

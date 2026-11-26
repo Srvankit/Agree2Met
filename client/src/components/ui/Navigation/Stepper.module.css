@@ -1,0 +1,135 @@
+.stepper {
+  width: 100%;
+}
+
+.list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.horizontal .list {
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.vertical .list {
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.horizontal .stepItem:last-child {
+  flex: none;
+}
+
+.connector {
+  position: absolute;
+  background-color: var(--color-border);
+  transition: background-color var(--transition-normal);
+}
+
+.horizontal .connector {
+  top: 14px;
+  left: calc(-50% + 14px);
+  right: calc(50% + 14px);
+  height: 2px;
+  z-index: 1;
+}
+
+.vertical .connector {
+  left: 13px;
+  top: -24px;
+  bottom: 24px;
+  width: 2px;
+  z-index: 1;
+}
+
+.done .connector {
+  background-color: var(--color-primary);
+}
+
+.stepContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  z-index: 2;
+  position: relative;
+  background-color: var(--color-surface);
+  padding: 0 var(--space-2);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  border: 2px solid var(--color-border);
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.done .indicator {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.current .indicator {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
+}
+
+.checkIcon {
+  stroke-width: 3px;
+}
+
+.labelWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.current .title {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.done .title {
+  color: var(--color-text);
+}
+
+.description {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 640px) {
+  .horizontal .labelWrapper {
+    display: none;
+  }
+}

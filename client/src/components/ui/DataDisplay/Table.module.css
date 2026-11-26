@@ -1,0 +1,124 @@
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.th {
+  background-color: var(--bg-surface-2);
+  color: var(--text-muted);
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+  user-select: none;
+}
+
+.sortableTh {
+  cursor: pointer;
+}
+
+.sortableTh:hover {
+  color: var(--text-main);
+}
+
+.thContent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sortIcon {
+  color: var(--text-subtle);
+  display: flex;
+}
+
+.selectHeaderCell, .selectCell {
+  width: 48px;
+  padding: 0 var(--space-3);
+  text-align: center;
+}
+
+.tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color var(--transition-fast);
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.tr:hover {
+  background-color: var(--bg-surface-2);
+}
+
+.selectedRow {
+  background-color: var(--accent-soft) !important;
+}
+
+.td {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-14);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.emptyCell {
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: var(--font-size-14);
+}
+
+/* Responsive card collapse on mobile */
+@media (max-width: 767px) {
+  .table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .tr {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border: none;
+  }
+
+  .td::before {
+    content: attr(data-label);
+    font-size: var(--font-size-12);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-right: var(--space-3);
+  }
+
+  .selectCell {
+    width: 100%;
+    text-align: left;
+    padding: 0 0 var(--space-2) 0;
+  }
+}

@@ -1,0 +1,80 @@
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-full);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sm {
+  font-size: 0.6875rem;
+  padding: 3px 8px;
+}
+
+.md {
+  font-size: var(--font-size-12);
+  padding: 4px 10px;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+/* Status variants matching design tokens */
+.draft {
+  color: var(--status-draft-text);
+  background-color: var(--status-draft-bg);
+  border: 1px solid var(--status-draft-border);
+}
+
+.pending {
+  color: var(--status-pending-text);
+  background-color: var(--status-pending-bg);
+  border: 1px solid var(--status-pending-border);
+}
+
+.sent {
+  color: var(--status-sent-text);
+  background-color: var(--status-sent-bg);
+  border: 1px solid var(--status-sent-border);
+}
+
+.awaiting {
+  color: var(--status-awaiting-text);
+  background-color: var(--status-awaiting-bg);
+  border: 1px solid var(--status-awaiting-border);
+}
+
+.partiallySigned {
+  color: var(--status-partially-signed-text);
+  background-color: var(--status-partially-signed-bg);
+  border: 1px solid var(--status-partially-signed-border);
+}
+
+.completed {
+  color: var(--status-completed-text);
+  background-color: var(--status-completed-bg);
+  border: 1px solid var(--status-completed-border);
+}
+
+.rejected {
+  color: var(--status-rejected-text);
+  background-color: var(--status-rejected-bg);
+  border: 1px solid var(--status-rejected-border);
+}
+
+.cancelled {
+  color: var(--status-cancelled-text);
+  background-color: var(--status-cancelled-bg);
+  border: 1px solid var(--status-cancelled-border);
+}
+
+.expired {
+  color: var(--status-expired-text);
+  background-color: var(--status-expired-bg);
+  border: 1px solid var(--status-expired-border);
+}
