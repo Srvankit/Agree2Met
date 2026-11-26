@@ -29,6 +29,7 @@ import { AgreementsPage } from './pages/agreements/AgreementsPage.jsx';
 import { AgreementDetailPage } from './pages/agreements/AgreementDetailPage.jsx';
 import { AgreementWizard } from './pages/agreements/AgreementWizard.jsx';
 import { ArchivePage } from './pages/archive/ArchivePage.jsx';
+import { PublicSigningPage } from './pages/signing/PublicSigningPage.jsx';
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
                   {/* Public & Landing */}
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/status" element={<StatusPage />} />
+                  <Route path="/sign/:token" element={<PublicSigningPage />} />
                   <Route path="/legal/terms" element={<TermsPage />} />
                   <Route path="/legal/privacy" element={<PrivacyPage />} />
 
