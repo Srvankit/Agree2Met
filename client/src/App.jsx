@@ -6,7 +6,9 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { OrganizationProvider } from './context/OrganizationContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import { AIAssistantProvider } from './context/AIAssistantContext.jsx';
+import { ProtectedRoute } from './components/common/ProtectedRoute.jsx';
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute.jsx';
+import { AppShell } from './components/common/AppShell.jsx';
 
 import { LandingPage } from './pages/public/LandingPage.jsx';
 import { LoginPage } from './pages/auth/LoginPage.jsx';
@@ -21,6 +23,10 @@ import { ServerErrorPage } from './pages/errors/ServerErrorPage.jsx';
 import { NotFoundPage } from './pages/NotFoundPage.jsx';
 import { StatusPage } from './pages/StatusPage.jsx';
 import { ComponentShowcase } from './pages/dev/ComponentShowcase.jsx';
+
+import { DashboardPage } from './pages/dashboard/DashboardPage.jsx';
+import { AgreementsPage } from './pages/agreements/AgreementsPage.jsx';
+import { ArchivePage } from './pages/archive/ArchivePage.jsx';
 
 export default function App() {
   return (
@@ -57,6 +63,20 @@ export default function App() {
                   <Route path="/verify-email" element={<VerifyEmailPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                  {/* Protected App Shell & Routes */}
+                  <Route
+                    path="/app"
+                    element={
+                      <ProtectedRoute>
+                        <AppShell />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="agreements" element={<AgreementsPage />} />
+                    <Route path="archive" element={<ArchivePage />} />
+                  </Route>
 
                   {/* Errors */}
                   <Route path="/403" element={<ForbiddenPage />} />
