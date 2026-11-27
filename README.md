@@ -1,11 +1,11 @@
 # AGREE2MET — Digital Agreement Management SaaS Platform
 
-[![Phase](https://img.shields.io/badge/Phase-1%20Foundation%20%26%20Infrastructure-success.svg)](file:///c:/Users/AnkitAccess/Agree2Met/IMPLEMENTATION_ROADMAP.md)
-[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete%20%E2%80%94%20Verified-brightgreen.svg)](file:///c:/Users/AnkitAccess/Agree2Met/DEVELOPMENT_PROGRESS.md)
-[![Architecture](https://img.shields.io/badge/Architecture-Decoupled%20Multi--Tier-orange.svg)](file:///c:/Users/AnkitAccess/Agree2Met/SYSTEM_ARCHITECTURE.md)
-[![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript%20%2B%20Tailwind%20v4-61dafb.svg)](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md#adr-010)
-[![Backend](https://img.shields.io/badge/Backend-Node.js%20(LTS)%20%2B%20Express%20%2B%20TypeScript-339933.svg)](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md#adr-001)
-[![Database](https://img.shields.io/badge/Database-PostgreSQL%2016%20%2B%20Prisma%20ORM-336791.svg)](file:///c:/Users/AnkitAccess/Agree2Met/DATABASE_DESIGN.md)
+[![Phase](https://img.shields.io/badge/Phase-1%20Foundation%20%26%20Infrastructure-success.svg)](./IMPLEMENTATION_ROADMAP.md)
+[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete%20%E2%80%94%20Verified-brightgreen.svg)](./DEVELOPMENT_PROGRESS.md)
+[![Architecture](https://img.shields.io/badge/Architecture-Decoupled%20Multi--Tier-orange.svg)](./SYSTEM_ARCHITECTURE.md)
+[![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript%20%2B%20Tailwind%20v4-61dafb.svg)](./TECHNICAL_DECISIONS.md#adr-010)
+[![Backend](https://img.shields.io/badge/Backend-Node.js%20(LTS)%20%2B%20Express%20%2B%20TypeScript-339933.svg)](./TECHNICAL_DECISIONS.md#adr-001)
+[![Database](https://img.shields.io/badge/Database-PostgreSQL%2016%20%2B%20Prisma%20ORM-336791.svg)](./DATABASE_DESIGN.md)
 
 ---
 
@@ -194,10 +194,10 @@ npm run build --prefix client
 
 | Document | Purpose & Key Content | Direct File Link |
 |---|---|---|
-| **Project Requirements** | Detailed functional requirements for all 12 modules, user personas, non-functional requirements, and failure modes. | [PROJECT_REQUIREMENTS.md](file:///c:/Users/AnkitAccess/Agree2Met/PROJECT_REQUIREMENTS.md) |
-| **System Architecture** | Multi-tier system architecture, Mermaid diagrams, tech stack evaluation, Puppeteer security, and security frameworks. | [SYSTEM_ARCHITECTURE.md](file:///c:/Users/AnkitAccess/Agree2Met/SYSTEM_ARCHITECTURE.md) |
-| **Database Design** | Relational schema with 20 normalized application tables, Mermaid ERD, column constraints, indexing strategies, and seed plans. | [DATABASE_DESIGN.md](file:///c:/Users/AnkitAccess/Agree2Met/DATABASE_DESIGN.md) |
-| **REST API Documentation** | Complete REST endpoint catalogue with OpenAPI-style request/response payloads, authentication, and error models. | [API_DOCUMENTATION.md](file:///c:/Users/AnkitAccess/Agree2Met/API_DOCUMENTATION.md) |
-| **Implementation Roadmap** | 13-phase master execution plan (Phase 0 to 12) detailing scope, components, security, testing, and acceptance criteria. | [IMPLEMENTATION_ROADMAP.md](file:///c:/Users/AnkitAccess/Agree2Met/IMPLEMENTATION_ROADMAP.md) |
-| **Technical Decisions (ADRs)** | 9 Architecture Decision Records detailing rationale for stack selections, security models, PDF generation, and AI guardrails. | [TECHNICAL_DECISIONS.md](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md) |
-| **Development Progress** | Living project status matrix, Phase 1 deliverable inventory, verification results, and risk register. | [DEVELOPMENT_PROGRESS.md](file:///c:/Users/AnkitAccess/Agree2Met/DEVELOPMENT_PROGRESS.md) |
+| **Project Requirements** | Detailed functional requirements for all 12 modules, user personas, non-functional requirements, and failure modes. | [PROJECT_REQUIREMENTS.md](./PROJECT_REQUIREMENTS.md) |
+| **System Architecture** | Multi-tier system architecture, Mermaid diagrams, tech stack evaluation, Puppeteer security, and security frameworks. | [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) |
+| **Database Design** | Relational schema with 20 normalized application tables, Mermaid ERD, column constraints, indexing strategies, and seed plans. | [DATABASE_DESIGN.md](./DATABASE_DESIGN.md) |
+| **REST API Documentation** | Complete REST endpoint catalogue with OpenAPI-style request/response payloads, authentication, and error models. | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) |
+| **Implementation Roadmap** | 13-phase master execution plan (Phase 0 to 12) detailing scope, components, security, testing, and acceptance criteria. | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) |
+| **Technical Decisions (ADRs)** | 9 Architecture Decision Records detailing rationale for stack selections, security models, PDF generation, and AI guardrails. | [TECHNICAL_DECISIONS.md](./TECHNICAL_DECISIONS.md) |
+| **Development Progress** | Living project status matrix, Phase 1 deliverable inventory, verification results, and risk register. | [DEVELOPMENT_PROGRESS.md](./DEVELOPMENT_PROGRESS.md) |
