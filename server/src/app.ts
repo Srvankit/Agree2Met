@@ -15,6 +15,10 @@ import { devRoutes } from './api/routes/dev.routes.js';
 import { authRouter } from './api/routes/auth.routes.js';
 import { userRouter } from './api/routes/user.routes.js';
 import { organizationRouter } from './api/routes/organization.routes.js';
+import { dashboardRouter } from './api/routes/dashboard.routes.js';
+import { analyticsRouter } from './api/routes/analytics.routes.js';
+import { agreementRouter } from './api/routes/agreement.routes.js';
+import { categoryRouter } from './api/routes/category.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -72,6 +76,10 @@ export function createApp(): Express {
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/users', userRouter);
   app.use('/api/v1/organizations', organizationRouter);
+  app.use('/api/v1/dashboard', dashboardRouter);
+  app.use('/api/v1/analytics', analyticsRouter);
+  app.use('/api/v1/agreements', agreementRouter);
+  app.use('/api/v1/agreement-categories', categoryRouter);
 
   // Dev routes mounted strictly in non-production environments
   if (env.NODE_ENV !== 'production') {

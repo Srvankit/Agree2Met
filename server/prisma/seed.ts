@@ -484,7 +484,7 @@ export async function main() {
           actorName: 'Agree2Met Automation Engine',
           actorEmail: 'system@agree2met.com',
           payload: { finalStatus: 'COMPLETED', allPartiesSigned: true },
-          createdAt: completedAt,
+          createdAt: new Date(completedAt.getTime() + 5000),
         });
       }
 

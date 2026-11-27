@@ -97,7 +97,10 @@ export class AuditService {
     });
 
     const previousEventHash = lastEvent ? lastEvent.eventHash : GENESIS_HASH;
-    const createdAt = input.createdAt || new Date();
+    let createdAt = input.createdAt || new Date();
+    if (lastEvent && createdAt <= lastEvent.createdAt) {
+      createdAt = new Date(lastEvent.createdAt.getTime() + 1000);
+    }
 
     const eventHash = computeEventHash({
       agreementId: input.agreementId,
