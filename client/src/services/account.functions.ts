@@ -1,10 +1,17 @@
-import { createServerFn } from '@tanstack/react-start';
+import { userService } from './userService';
 
-export const deleteAccount = createServerFn({ method: 'POST' })
-  .inputValidator((input: { confirmation: string }) => {
-    if (input.confirmation !== 'DELETE') throw new Error('Type DELETE to confirm.');
-    return input;
-  })
-  .handler(async () => {
-    return { deleted: true };
-  });
+export interface DeleteAccountInput {
+  confirmation: string;
+  password?: string;
+}
+
+export async function deleteAccount(input: { data: DeleteAccountInput } | DeleteAccountInput) {
+  const confirmation = 'data' in input ? input.data.confirmation : input.confirmation;
+  const password = 'data' in input ? (input.data.password || '') : (input.password || '');
+
+  if (confirmation !== 'DELETE') {
+    throw new Error('Type DELETE to confirm.');
+  }
+
+  return userService.deleteAccount(confirmation, password);
+}

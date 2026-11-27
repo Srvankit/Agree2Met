@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowRight, Mail, Eye, EyeOff } from 'lucide-react';
 import { useWorkspace } from '../context/Workspace';
 import { authService } from '../services/authService';
+import { isFullDemoMode } from '../services/serviceMode';
 import { Button, Input, IconButton } from '../components/demo/ui';
 import { Logo } from '../components/demo/Shell';
 import s from './pages.module.css';
@@ -10,7 +11,7 @@ import s from './pages.module.css';
 export function passwordStrength(password) {
   if (!password) return 0;
   return [
-    password.length >= 8,
+    password.length >= 10,
     /[a-z]/.test(password) && /[A-Z]/.test(password),
     /\d/.test(password),
     /[^a-zA-Z0-9]/.test(password),
@@ -28,26 +29,45 @@ export function Auth({ mode = 'login' }) {
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [recovery, setRecovery] = useState(false);
+  const [showResendBtn, setShowResendBtn] = useState(false);
 
   const register = mode === 'register';
   const reset = mode === 'reset-password';
   const forgot = mode === 'forgot-password';
   const verify = mode === 'verify-email';
 
+  // Get token from URL query parameter
+  const getTokenFromUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token') || '';
+  };
+
+  const [token, setToken] = useState(getTokenFromUrl);
+
   useEffect(() => {
     setError('');
     setMessage('');
-  }, [mode]);
+    setShowResendBtn(false);
+    const urlToken = getTokenFromUrl();
+    setToken(urlToken);
 
-  useEffect(() => {
-    if (!reset) return;
-    const hash = typeof window !== 'undefined' ? new URLSearchParams(window.location.hash.slice(1)) : null;
-    setRecovery(
-      hash?.get('type') === 'recovery' ||
-        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('agree2met-recovery') === 'true')
-    );
-  }, [reset]);
+    // Auto-verify if on verify-email route with token
+    if (mode === 'verify-email' && urlToken) {
+      setBusy(true);
+      authService
+        .verifyEmail(urlToken)
+        .then((res) => {
+          setMessage(res?.message || 'Email verified successfully! You can now sign in.');
+        })
+        .catch((err) => {
+          setError(err?.message || 'Verification link is invalid or has expired.');
+        })
+        .finally(() => {
+          setBusy(false);
+        });
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (!cooldown) return;
@@ -55,34 +75,110 @@ export function Auth({ mode = 'login' }) {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
+  async function handleResendVerification() {
+    if (!email) {
+      setError('Please enter your email address to resend verification.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await authService.resendVerification(email);
+      setCooldown(60);
+      setShowResendBtn(false);
+      setMessage(`Verification link resent to ${email}. Please check your inbox.`);
+    } catch (err) {
+      setError(err?.message || 'Failed to resend verification email.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
     setError('');
+    setMessage('');
+    setShowResendBtn(false);
+
     try {
       if (register) {
-        if (passwordStrength(password) < 3) {
-          throw new Error('Choose at least 8 characters with mixed case, a number, or a symbol.');
+        if (password.length < 10) {
+          throw new Error('Password must be at least 10 characters long.');
         }
-        await authService.register({ name, email, password });
-        await login(email, password);
-        setMessage('Account created successfully.');
-        navigate({ to: '/account' });
+        if (passwordStrength(password) < 3) {
+          throw new Error('Choose at least 10 characters with mixed case, a number, and a symbol.');
+        }
+
+        const parts = name.trim().split(' ');
+        const firstName = parts[0] || name.trim();
+        const lastName = parts.slice(1).join(' ') || firstName;
+
+        const res = await authService.register({
+          firstName,
+          lastName,
+          email: email.trim(),
+          password,
+        });
+
+        setMessage(res?.message || 'Account created! Please check your email inbox to verify your account before signing in.');
       } else if (forgot) {
+        if (!email) {
+          throw new Error('Please enter your email address.');
+        }
+        await authService.forgotPassword(email.trim());
         setMessage('If an account exists for that email, a password reset link has been sent.');
       } else if (reset) {
-        if (!recovery) throw new Error('Open a valid password recovery link from your email first.');
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.removeItem('agree2met-recovery');
+        const resetToken = token || getTokenFromUrl();
+        if (!resetToken) {
+          throw new Error('Invalid or missing password reset token. Please request a new reset link.');
         }
-        setMessage('Your password has been updated.');
+        if (password.length < 10) {
+          throw new Error('New password must be at least 10 characters long.');
+        }
+        await authService.resetPassword(resetToken, password);
+        setMessage('Your password has been successfully updated. You can now sign in.');
       } else if (verify) {
-        setCooldown(60);
-        setMessage('A new confirmation email has been sent.');
+        const verifyToken = token || getTokenFromUrl();
+        if (verifyToken) {
+          const res = await authService.verifyEmail(verifyToken);
+          setMessage(res?.message || 'Email verified successfully! You can now sign in.');
+        } else {
+          if (!email) {
+            throw new Error('Please enter your email address to receive a confirmation link.');
+          }
+          await authService.resendVerification(email.trim());
+          setCooldown(60);
+          setMessage(`A confirmation email has been sent to ${email}.`);
+        }
       } else {
-        await login(email || 'alex@agree2met.com', password || 'Demo@1234');
-        toast('Signed in to Agree2Met');
-        navigate({ to: '/' });
+        // Login mode
+        if (!email || !password) {
+          if (isFullDemoMode()) {
+            await login(email || 'alex@agree2met.com', password || 'Demo@1234');
+            toast('Signed in to Agree2Met');
+            navigate({ to: '/' });
+            return;
+          }
+          throw new Error('Please enter your email and password.');
+        }
+
+        try {
+          await login(email.trim(), password);
+          toast('Signed in to Agree2Met');
+          navigate({ to: '/' });
+        } catch (loginErr) {
+          if (loginErr?.code === 'EMAIL_NOT_VERIFIED') {
+            setShowResendBtn(true);
+            throw new Error('Your email address is not verified. Please verify your email before signing in.');
+          } else if (loginErr?.code === 'ACCOUNT_LOCKED') {
+            throw new Error('Your account is temporarily locked due to too many failed attempts. Please try again later or reset your password.');
+          } else if (loginErr?.code === 'INVALID_CREDENTIALS') {
+            throw new Error('Invalid email or password.');
+          } else {
+            throw loginErr;
+          }
+        }
       }
     } catch (e) {
       setError(e.message ?? 'Something went wrong. Please try again.');
@@ -100,6 +196,8 @@ export function Auth({ mode = 'login' }) {
         : verify
           ? 'Check your inbox'
           : 'Welcome back';
+
+  const fullDemo = isFullDemoMode();
 
   return (
     <main className={s.auth}>
@@ -132,6 +230,17 @@ export function Auth({ mode = 'login' }) {
         {error && (
           <div role="alert" className={s.error}>
             {error}
+            {showResendBtn && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <Button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={busy || cooldown > 0}
+                >
+                  {cooldown ? `Resend in ${cooldown}s` : 'Resend verification email'}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -172,7 +281,7 @@ export function Auth({ mode = 'login' }) {
                     label={reset ? 'New password' : 'Password'}
                     type={show ? 'text' : 'password'}
                     autoComplete={register || reset ? 'new-password' : 'current-password'}
-                    minLength={register || reset ? 8 : 1}
+                    minLength={register || reset ? 10 : 1}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -209,9 +318,9 @@ export function Auth({ mode = 'login' }) {
             </>
           )}
 
-          {reset && !recovery && (
+          {reset && !token && (
             <div className={s.notice}>
-              Open your recovery email to continue. <Link to="/forgot-password">Request a new link</Link>.
+              Open your recovery email link to continue, or <Link to="/forgot-password">request a new link</Link>.
             </div>
           )}
 
@@ -219,7 +328,7 @@ export function Auth({ mode = 'login' }) {
             type="submit"
             variant="primary"
             icon={verify ? Mail : ArrowRight}
-            disabled={busy || cooldown > 0 || (reset && !recovery)}
+            disabled={busy || cooldown > 0 || (reset && !token)}
           >
             {busy
               ? 'Please wait…'
@@ -261,9 +370,12 @@ export function Auth({ mode = 'login' }) {
           )}
         </p>
 
-        <Button onClick={() => navigate({ to: '/' })}>Explore the demo workspace</Button>
-
-        {!forgot && !reset && <p>Demo login: alex@agree2met.com / Demo@1234</p>}
+        {fullDemo && (
+          <>
+            <Button onClick={() => navigate({ to: '/' })}>Explore the demo workspace</Button>
+            {!forgot && !reset && <p>Demo login: alex@agree2met.com / Demo@1234</p>}
+          </>
+        )}
 
         <Link to="/landing" className={s.textLink}>
           About Agree2Met →
