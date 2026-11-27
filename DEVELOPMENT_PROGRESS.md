@@ -111,8 +111,30 @@ In accordance with direct sequencing instructions, the **complete frontend appli
 
 ---
 
-## 6. Next Steps: Full-Stack Integration & Backend Implementation
+## 6. Frontend Import & Stack Migration (`feat/lovable-frontend`) — COMPLETE & VERIFIED
 
-With the frontend user experience complete, accessible, and verified mock-backed:
-1. Review all pages in the browser using `npm run dev --prefix client`.
-2. Connect backend endpoints (`server/`) to replace mock store iteratively as subsequent Phase implementations proceed.
+Following user approval, the complete Lovable-produced frontend application was imported into `client/` on branch `feat/lovable-frontend`. The previous CSS Modules implementation has been preserved in `client-legacy-backup/`.
+
+### Key Migration Deliverables Completed
+
+| Area | Implementation & Hygiene | Status | Verification |
+|---|---|---|---|
+| **Repository & Branching** | Created branch `feat/lovable-frontend`. Moved previous frontend to `client-legacy-backup/`. Extracted Lovable archive into `client/`. | Completed | Git branch verified, zero loss of historical code |
+| **Vendor & Cloud De-coupling** | Completely purged proprietary dependencies (`@lovable.dev/vite-tanstack-config`, `@lovable.dev/component-tagger`, `lovable-tagger`) and Supabase libraries (`@supabase/supabase-js`, `client/supabase/`, `client/drizzle/`, `src/integrations/supabase/`). | Completed | Recursive string search confirmed **0 remaining occurrences** of "lovable" and "supabase" |
+| **Native Tooling & Routing** | Replaced proprietary Vite bridge with standard `@tanstack/react-start/plugin/vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, and `vite-tsconfig-paths`. Fixed all JSX/TypeScript annotation issues. | Completed | Production build (`npm run build --prefix client`) succeeded with 0 errors |
+| **Self-Hosted Typography** | Installed `@fontsource-variable/inter`, `@fontsource/jetbrains-mono`, `@fontsource/source-serif-4` directly in `package.json` and `@import`ed in CSS. Removed external Google Fonts links and inline theme scripts for strict CSP compliance. | Completed | HTML and CSS bundle inspection confirmed no CDN links |
+| **Core Client Integration** | Preserved `apiClient` (`credentials: 'include'`, `X-Requested-With: XMLHttpRequest`, CSRF token reflection), created `StatusPage.tsx` and route `/status` querying `GET /api/v1/health`, linked in landing footer and navigation. | Completed | Real dev-server test: Status page responds with HTTP 200 and loads health checks |
+| **Mock Store Versioning & Resilience** | Implemented `MOCK_STORE_VERSION = 4` (`agree2met-demo-v4`). Stale storage keys (`v1`–`v3`, `agree2met_mock_db`) are discarded and reseeded on boot. `normalizeAgreement()` guarantees `parties`, `clauses`, `history`, `audit_events` are always arrays, eliminating `undefined .map()` crashes. | Completed | Verified across seeded and empty store conditions |
+| **Route Smoke Test Suite** | Created comprehensive Vitest smoke test (`src/test/smoke.test.tsx`) exercising every public and authenticated route across all 4 roles (`Owner`, `Admin`, `Member`, `Viewer`) with both seeded and empty stores. | Completed | 92 tests passing across 4 test files (`lifecycle.test.ts`, `audit.test.ts`, `app-routing.test.tsx`, `smoke.test.tsx`) |
+| **Code Quality & Linter** | Configured ESLint to ignore auto-generated TanStack router trees (`routeTree.gen.ts`). | Completed | `npm run lint --prefix client` passed with 0 errors |
+
+### Backend Roadmap Clarification
+As mandated, the backend implementation roadmap (Phases 2 through 12) remains strictly pending and unchanged. The imported frontend operates against the high-fidelity mock adapter until backend endpoints are incrementally integrated.
+
+---
+
+## 7. Next Steps: Backend Service Implementation
+
+With the frontend fully styled, interactive, and mock-backed:
+1. Proceed with backend Phase 2 / Phase 3 (Authentication & Identity Management) as prioritized in `IMPLEMENTATION_ROADMAP.md`.
+2. Connect real API endpoints to `apiClient` / service adapters by toggling `VITE_USE_MOCK=false`.
