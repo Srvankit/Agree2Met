@@ -13,6 +13,8 @@ import { errorHandlerMiddleware } from './api/middlewares/error.middleware.js';
 import { healthRoutes } from './api/routes/health.routes.js';
 import { devRoutes } from './api/routes/dev.routes.js';
 import { authRouter } from './api/routes/auth.routes.js';
+import { userRouter } from './api/routes/user.routes.js';
+import { organizationRouter } from './api/routes/organization.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -68,6 +70,8 @@ export function createApp(): Express {
   app.use('/api/v1', healthRoutes);
   app.use('/health', healthRoutes); // root convenience alias
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/users', userRouter);
+  app.use('/api/v1/organizations', organizationRouter);
 
   // Dev routes mounted strictly in non-production environments
   if (env.NODE_ENV !== 'production') {
