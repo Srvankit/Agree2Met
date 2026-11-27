@@ -1,8 +1,8 @@
 # AGREE2MET — Development Progress & Living Status Tracker
 
-**Document Version:** 1.1.0  
-**Current Phase:** Phase 1 Complete (Foundation & Infrastructure) — Ready for Phase 2  
-**Overall Project Status:** Phase 1 Verified & Tested  
+**Document Version:** 1.2.0  
+**Current Phase:** Phase 3 Complete (Authentication & User Management) — Ready for Phase 4  
+**Overall Project Status:** Phase 3 Verified & Tested  
 **Last Updated:** November 2026  
 
 ---
@@ -13,9 +13,9 @@
 |---|---|---|---|---|---|
 | **Phase 0** | **Product Discovery & Planning** | **APPROVED & SIGNED OFF** | **100%** | Nov 2026 | None |
 | **Phase 1** | **Foundation & Development Infrastructure** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
-| Phase 2 | UI Design System & Component Library (CSS Modules) | Pending | 0% | — | Requires Phase 1 (Unblocked) |
-| Phase 3 | Authentication & User Management (HttpOnly Cookies) | Pending | 0% | — | Requires Phase 2 |
-| Phase 4 | Dashboard & Analytics Engine (Real DB Aggregations) | Pending | 0% | — | Requires Phase 3 |
+| **Phase 2** | **UI Design System & Component Library (Lovable Import)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
+| **Phase 3** | **Authentication & User Management (HttpOnly Cookies)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
+| Phase 4 | Dashboard & Analytics Engine (Real DB Aggregations) | Pending | 0% | — | Requires Phase 3 (Unblocked) |
 | Phase 5 | Agreement Creation Engine & Basic Snapshots (Wizard) | Pending | 0% | — | Requires Phase 4 |
 | Phase 6 | Agreement Repository, Search & PDF Compilation | Pending | 0% | — | Requires Phase 5 |
 | Phase 7 | Guest Collaboration, Signing Canvas & Audit Trail | Pending | 0% | — | Requires Phase 6 |
@@ -133,8 +133,67 @@ As mandated, the backend implementation roadmap (Phases 2 through 12) remains st
 
 ---
 
-## 7. Next Steps: Backend Service Implementation
+## 7. Phase 3 Implementation & Deliverables Inventory (`phase/03-authentication`) — COMPLETE & VERIFIED
 
-With the frontend fully styled, interactive, and mock-backed:
-1. Proceed with backend Phase 2 / Phase 3 (Authentication & Identity Management) as prioritized in `IMPLEMENTATION_ROADMAP.md`.
-2. Connect real API endpoints to `apiClient` / service adapters by toggling `VITE_USE_MOCK=false`.
+In accordance with Phase 3 specifications and ADR-004 / ADR-011 / ADR-012, real authentication, user profile management, S3 avatar uploads, and organization RBAC have been fully implemented, integrated, and verified on branch `phase/03-authentication`.
+
+### Key Subsystems & Deliverables Completed
+
+| Subsystem / Deliverable | Implementation Details | Status | Verified By |
+|---|---|---|---|
+| **Prisma Relational Models & Migrations** | Created normalized relational tables: `users` (Argon2id password hashes, failed attempts, lockouts), `user_profiles` (job title, timezone, avatar URL), `organizations` (slug, branding), `organization_members` (RBAC enum: `OWNER`, `ADMIN`, `MEMBER`, `VIEWER`), `user_sessions` (SHA-256 `refreshTokenHash`, `family_id` UUID, IP, User-Agent), and `organization_invitations` (SHA-256 token hash, expiry). Executed migration `20261127101310_init_auth_and_organizations`. Seed script configured with initial admin and org. | Completed | PostgreSQL 16 migration executed, Prisma Studio verified, seeds tested |
+| **Password Security & Rate Limiting** | Passwords hashed using Argon2id (`memoryCost: 65536`, `timeCost: 3`, `parallelism: 4`). Minimum 10 characters with common-password dictionary blacklist check (`common-passwords.ts`). Progressive lockout: 5 consecutive failed attempts trigger a 15-minute account freeze (`423 ACCOUNT_LOCKED`). | Completed | `auth.validator.ts`, `password.util.ts`, `rate-limiter.middleware.ts`, `auth-full.test.ts` |
+| **HttpOnly Cookie Delivery & Family Rotation** | 15-minute `access_token` and 14-day rolling `refresh_token` delivered strictly via `HttpOnly`, `SameSite=Strict` cookies (`Secure` in production). Zero tokens in JSON bodies. Rotating refresh tokens enforce **Token Family Reuse Detection**: replaying a previous token immediately terminates all active sessions in the family (`REFRESH_TOKEN_REUSE_DETECTED`). | Completed | `cookie.util.ts`, `auth.service.ts`, `auth-full.test.ts` (Scenarios 3, 4, 7, 8) |
+| **Active CSRF Protection** | Enforces double-submit `X-CSRF-Token` header matching non-HttpOnly `csrf_token` cookie on all mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`), alongside standard `X-Requested-With: XMLHttpRequest`. | Completed | `csrf.middleware.ts`, `csrf.test.ts`, `auth-full.test.ts` (Scenario 11) |
+| **Anti-Enumeration & Async Mail Catcher** | Registration, password reset, and resend verification endpoints return uniform 200/201 responses regardless of whether the email exists. Verification and reset links carry 32-byte cryptographically random hex tokens (persisted as SHA-256 hashes) dispatched via BullMQ to Mailpit. | Completed | `auth.service.ts`, `email.service.ts`, `auth-full.test.ts` (Scenarios 2, 6, 9) |
+| **Users & Account Management Backend** | Endpoints for profile updates, password change (verifying current password + enforcing 10-char blacklist), GDPR data export (full JSON bundle), and account deletion requiring explicit confirmation + password with **Sole-Owner Protection** (prevents deletion if sole owner of org with active members). | Completed | `user.service.ts`, `user.routes.ts`, `auth-full.test.ts` (Scenarios 14, 15) |
+| **S3 Presigned Avatar Uploads** | Direct multipart upload handling with 2MB file limit and MIME validation (`image/jpeg`, `image/png`, `image/webp`). Generates signed presigned URLs for private object display. | Completed | `storage.service.ts`, `user.controller.ts`, `auth-full.test.ts` (Scenario 14) |
+| **Organizations & RBAC Hierarchy** | Organization creation, member roster, role updates, and member removal. Enforces strict hierarchy (`OWNER` > `ADMIN` > `MEMBER` > `VIEWER`). Admins cannot demote or remove Owners. Organizations must retain at least one Owner (**Last-Owner Protection**). | Completed | `organization.service.ts`, `permissions.ts`, `auth-full.test.ts` (Scenarios 12, 13) |
+| **Frontend Adapter & Dual-Mode Integration** | Created `serviceMode.ts` with `isServiceReal('service_name')` governed by `VITE_REAL_SERVICES` environment variable. Client `apiClient` transparently captures 401s, executes single-flight token refresh with promise queueing, and reflects `csrf_token` into headers. | Completed | `serviceMode.ts`, `api.ts`, `apiClient.test.ts` (4 tests passing) |
+| **Real Frontend Page Wiring** | Fully wired `Auth.jsx` (login, register, email verification, password reset, error mappings), `Account.jsx` (profile edit, S3 avatar upload, password change, sole-owner delete modal), `Supporting.jsx` (team member roster & invitations with RBAC checks), and `Workspace.jsx` (session hydration). | Completed | Frontend build and unit smoke tests (96 tests passing across 5 suites) |
+
+---
+
+## 8. Phase 3 Verification Metrics & Close-Out Results
+
+### 1. Test Suite Verification
+- **Server Test Suite:** 9 test files, **39 passing tests (100% pass rate)**.
+  - Comprehensive integration test `server/tests/integration/auth-full.test.ts` exercises all 15 specification scenarios end-to-end:
+    1. Atomic registration & default organization assignment
+    2. Anti-enumeration defense (duplicate email registration)
+    3. Login token delivery (HttpOnly cookies present, zero tokens in body)
+    4. Access token expiry & rejected unauthenticated requests
+    5. Progressive lockout (5 failed attempts trigger 15-minute lockout)
+    6. Email verification guard (unverified accounts blocked from login)
+    7. Refresh token rotation (session expiry extended, new tokens generated)
+    8. Token family reuse detection (replaying old token revokes all family sessions)
+    9. Password reset flow & session revocation
+    10. Session listing & targeted remote revocation
+    11. CSRF defense enforcement (missing/invalid tokens rejected)
+    12. Multi-tenant isolation (preventing cross-organization data leakage)
+    13. RBAC hierarchy matrix & last-owner protection
+    14. User profile updates & S3 avatar upload constraints (2MB / MIME check)
+    15. Sole-owner account deletion guard (`SOLE_OWNER_CANNOT_DELETE`)
+- **Client Test Suite:** 5 test files, **96 passing tests (100% pass rate)**.
+  - Includes `apiClient.test.ts` verifying CSRF header reflection, 401 refresh single-flight deduplication, and retry logic.
+
+### 2. Lint & Compilation
+- **Server Build:** `npm run build --prefix server` compiled with **0 errors**.
+- **Client Build:** `npm run build --prefix client` bundled with **0 errors** (1,967 modules transformed).
+- **Linter:** `npm run lint --prefix server` and `npm run lint --prefix client` passed with **0 errors**.
+
+### 3. Backing Infrastructure Health
+- All 4 backing containers running and verified healthy via `GET /api/v1/health`:
+  - `agree2met-postgres` (PostgreSQL 16 on port 5433)
+  - `agree2met-redis` (Redis 7 on port 6379)
+  - `agree2met-storage` (Zenko S3 storage on port 9000)
+  - `agree2met-mailpit` (SMTP port 1025, Web UI port 8025)
+
+---
+
+## 9. Next Steps: Phase 4 (Dashboard & Analytics Engine)
+
+With Phase 3 complete and verified:
+1. Proceed with **Phase 4 — Dashboard & Analytics Engine** per `IMPLEMENTATION_ROADMAP.md`.
+2. Implement backend database aggregations for executive KPI cards, volume trends, category breakdowns, and turnaround metrics.
+3. Wire frontend `dashboardService.ts` and `analyticsService.ts` via `serviceMode.ts`.

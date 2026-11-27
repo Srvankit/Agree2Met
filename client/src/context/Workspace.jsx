@@ -44,6 +44,24 @@ export function WorkspaceProvider({ children }) {
       setError(e.message);
     }
     setReady(true);
+
+    // If real session exists, restore it seamlessly
+    authService.getSession().then((session) => {
+      if (session) {
+        setUser(session);
+        setProfile({
+          display_name: session.display_name || session.name,
+          avatar_url: session.avatar_url || '',
+        });
+        setData((d) => ({
+          ...d,
+          profile: { name: session.name, email: session.email },
+          demoRole: session.role || 'Owner',
+          org: session.organizations?.[0]?.id || d.org,
+          orgName: session.organizations?.[0]?.name || d.orgName,
+        }));
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -105,15 +123,22 @@ export function WorkspaceProvider({ children }) {
 
   async function login(email, password) {
     const res = await authService.login(email, password);
-    setUser(res.user);
-    setProfile({ display_name: res.user.name, avatar_url: '' });
+    const session = await authService.getSession().catch(() => null);
+    const activeUser = session || res.user;
+    setUser(activeUser);
+    setProfile({
+      display_name: activeUser.display_name || activeUser.name,
+      avatar_url: activeUser.avatar_url || '',
+    });
     update((d) => ({
       ...d,
-      profile: { name: res.user.name, email: res.user.email },
-      demoRole: res.user.role || 'Owner',
+      profile: { name: activeUser.name, email: activeUser.email },
+      demoRole: activeUser.role || 'Owner',
+      org: activeUser.organizations?.[0]?.id || d.org,
+      orgName: activeUser.organizations?.[0]?.name || d.orgName,
     }));
     setToast('Signed in successfully');
-    return res.user;
+    return activeUser;
   }
 
   async function logout() {

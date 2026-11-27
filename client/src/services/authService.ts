@@ -1,7 +1,6 @@
 import { load, persist } from './mock/mockStore';
 import { apiClient } from './api';
-
-const USE_MOCK = import.meta.env?.VITE_USE_MOCK !== 'false';
+import { isServiceReal } from './serviceMode';
 
 export interface UserSession {
   id: string;
@@ -10,11 +9,17 @@ export interface UserSession {
   role: string;
   avatar_url?: string;
   display_name?: string;
+  organizations?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    role: string;
+  }>;
 }
 
 export const authService = {
   async getSession(): Promise<UserSession | null> {
-    if (USE_MOCK) {
+    if (!isServiceReal('auth')) {
       const state = load();
       if (!state.profile) return null;
       return {
@@ -25,12 +30,29 @@ export const authService = {
         role: state.demoRole || 'Owner',
       };
     }
-    const res = await apiClient.get('/auth/me');
-    return res.data?.user || null;
+
+    try {
+      const res = await apiClient.get('/auth/me');
+      const data = res.data;
+      if (!data) return null;
+
+      const primaryOrg = data.organizations?.[0];
+      return {
+        id: data.id,
+        name: data.profile?.displayName || `${data.profile?.firstName || ''} ${data.profile?.lastName || ''}`.trim() || data.email,
+        display_name: data.profile?.displayName || data.email,
+        email: data.email,
+        role: primaryOrg?.role || 'MEMBER',
+        avatar_url: data.profile?.avatarUrl,
+        organizations: data.organizations,
+      };
+    } catch {
+      return null;
+    }
   },
 
   async login(email: string, password?: string): Promise<{ user: UserSession }> {
-    if (USE_MOCK) {
+    if (!isServiceReal('auth')) {
       const state = load();
       const user: UserSession = {
         id: 'usr-demo-01',
@@ -43,50 +65,109 @@ export const authService = {
       persist(state);
       return { user };
     }
+
     const res = await apiClient.post('/auth/login', { email, password });
-    return res.data;
+    const u = res.data?.user;
+    const session = await this.getSession();
+
+    return {
+      user: session || {
+        id: u?.id || '',
+        name: u?.profile?.displayName || u?.email || email,
+        display_name: u?.profile?.displayName || u?.email || email,
+        email: u?.email || email,
+        role: 'OWNER',
+      },
+    };
   },
 
-  async register(data: { name: string; email: string; password?: string }): Promise<{ user: UserSession }> {
-    if (USE_MOCK) {
+  async register(data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password?: string;
+    organizationName?: string;
+  }): Promise<{ message: string }> {
+    if (!isServiceReal('auth')) {
       const state = load();
-      const user: UserSession = {
-        id: `usr-demo-${Date.now()}`,
-        name: data.name,
-        display_name: data.name,
-        email: data.email,
-        role: 'Owner',
-      };
-      state.profile = { name: data.name, email: data.email };
+      const name = `${data.firstName} ${data.lastName}`.trim();
+      state.profile = { name, email: data.email };
       persist(state);
-      return { user };
+      return {
+        message: 'If this email is not already registered, a verification link has been sent.',
+      };
     }
+
     const res = await apiClient.post('/auth/register', data);
     return res.data;
   },
 
   async logout(): Promise<void> {
-    if (USE_MOCK) {
+    if (!isServiceReal('auth')) {
       return;
     }
-    await apiClient.post('/auth/logout');
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // Ignore logout network failures
+    }
   },
 
-  async updateProfile(updates: Partial<UserSession>): Promise<UserSession> {
-    if (USE_MOCK) {
-      const state = load();
-      state.profile = { ...state.profile, ...updates };
-      if (updates.role) state.demoRole = updates.role;
-      persist(state);
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    if (!isServiceReal('auth')) {
+      return { message: 'Email verified successfully.' };
+    }
+    const res = await apiClient.post('/auth/verify-email', { token });
+    return res.data;
+  },
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    if (!isServiceReal('auth')) {
+      return { message: 'Verification link resent.' };
+    }
+    const res = await apiClient.post('/auth/resend-verification', { email });
+    return res.data;
+  },
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    if (!isServiceReal('auth')) {
+      return { message: 'Password reset link sent.' };
+    }
+    const res = await apiClient.post('/auth/forgot-password', { email });
+    return res.data;
+  },
+
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    if (!isServiceReal('auth')) {
+      return { message: 'Password reset successfully.' };
+    }
+    const res = await apiClient.post('/auth/reset-password', { token, password });
+    return res.data;
+  },
+
+  async getSessions(): Promise<{ sessions: any[] }> {
+    if (!isServiceReal('auth')) {
       return {
-        id: 'usr-demo-01',
-        name: state.profile.name,
-        display_name: state.profile.name,
-        email: state.profile.email,
-        role: state.demoRole || 'Owner',
+        sessions: [
+          {
+            id: 'sess-current-demo',
+            userAgent: 'Current Browser Session (Demo)',
+            ipAddress: '127.0.0.1',
+            createdAt: new Date().toISOString(),
+            isCurrent: true,
+          },
+        ],
       };
     }
-    const res = await apiClient.patch('/users/me', updates);
+    const res = await apiClient.get('/auth/sessions');
+    return res.data;
+  },
+
+  async revokeSession(sessionId: string): Promise<{ message: string }> {
+    if (!isServiceReal('auth')) {
+      return { message: 'Session revoked.' };
+    }
+    const res = await apiClient.delete(`/auth/sessions/${sessionId}`);
     return res.data;
   },
 

@@ -1,4 +1,4 @@
-import nodemailer, { Transporter } from 'nodemailer';
+import nodemailer, { Transporter, SentMessageInfo } from 'nodemailer';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 
@@ -31,7 +31,7 @@ export class EmailService {
     });
   }
 
-  public async sendEmail(options: EmailOptions): Promise<nodemailer.SentMessageInfo> {
+  public async sendEmail(options: EmailOptions): Promise<SentMessageInfo> {
     const from = options.from || env.SMTP_FROM;
     try {
       const info = await this.transporter.sendMail({

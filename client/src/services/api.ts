@@ -1,5 +1,6 @@
 // Agree2Met HTTP Client Adapter
-// Enforces HttpOnly cookies, CSRF XMLHttpRequest headers, and standard response envelopes
+// Enforces HttpOnly cookies, CSRF double-submit headers, standard response envelopes,
+// and single-flight token refresh retry on 401.
 
 const BASE_URL =
   import.meta.env?.VITE_API_URL ||
@@ -26,23 +27,71 @@ function getCsrfToken(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-export async function request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+// Single-flight refresh state
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+async function executeSingleFlightRefresh(): Promise<boolean> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const csrfToken = getCsrfToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
+      const res = await fetch(`${BASE_URL}/auth/refresh-token`, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+      });
+
+      return res.ok;
+    } catch {
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+export async function request<T = any>(
+  endpoint: string,
+  options: RequestInit = {},
+  isRetry = false
+): Promise<T> {
+  const url = endpoint.startsWith('http')
+    ? endpoint
+    : `${BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
   const csrfToken = getCsrfToken();
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest', // Mandatory CSRF protection header
+    'X-Requested-With': 'XMLHttpRequest',
     ...(csrfToken && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method?.toUpperCase() || '')
       ? { 'X-CSRF-Token': csrfToken }
       : {}),
     ...((options.headers as Record<string, string>) || {}),
   };
 
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const config: RequestInit = {
     ...options,
     headers,
-    credentials: 'include', // Mandatory for HttpOnly session cookies
+    credentials: 'include',
   };
 
   if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
@@ -54,6 +103,19 @@ export async function request<T = any>(endpoint: string, options: RequestInit = 
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      // Automatic single-flight refresh on 401 (excluding auth initiation endpoints)
+      const isAuthEndpoint =
+        endpoint.includes('/auth/login') ||
+        endpoint.includes('/auth/register') ||
+        endpoint.includes('/auth/refresh-token');
+
+      if (response.status === 401 && !isRetry && !isAuthEndpoint) {
+        const refreshed = await executeSingleFlightRefresh();
+        if (refreshed) {
+          return request<T>(endpoint, options, true);
+        }
+      }
+
       const errorMsg = data?.error?.message || `Request failed with status ${response.status}`;
       const errorCode = data?.error?.code || 'HTTP_ERROR';
       const details = data?.error?.details || [];

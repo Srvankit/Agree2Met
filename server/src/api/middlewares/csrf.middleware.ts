@@ -14,18 +14,15 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction):
     return next();
   }
 
-  // Primary defense: Require custom header X-Requested-With (or X-CSRF-Token)
-  // Browsers will not send custom headers cross-origin without an explicit CORS preflight
   const requestedWith = req.headers['x-requested-with'];
   const csrfHeader = req.headers['x-csrf-token'];
-  const csrfCookie = req.cookies?.['X-CSRF-Token'];
+  const csrfCookie = req.cookies?.['csrf_token'] || req.cookies?.['X-CSRF-Token'];
 
-  // Check 1: X-Requested-With validation
-  const hasCustomHeader =
-    (typeof requestedWith === 'string' && requestedWith.toLowerCase() === 'xmlhttprequest') ||
-    Boolean(csrfHeader);
+  // Check 1: Custom header requirement (anti-CSRF preflight trigger)
+  const isXMLHttpRequest =
+    typeof requestedWith === 'string' && requestedWith.toLowerCase() === 'xmlhttprequest';
 
-  if (!hasCustomHeader) {
+  if (!isXMLHttpRequest && !csrfHeader) {
     return next(
       new ForbiddenError(
         'CSRF protection failed: Missing required X-Requested-With or X-CSRF-Token header.',
@@ -33,9 +30,17 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction):
     );
   }
 
-  // Check 2: If double-submit CSRF cookie is present, it must match X-CSRF-Token
-  if (csrfCookie && csrfHeader && csrfCookie !== csrfHeader) {
-    return next(new ForbiddenError('CSRF protection failed: Token mismatch.'));
+  // Check 2: Double-submit validation for authenticated sessions
+  // When a csrf_token cookie exists, authenticated mutating requests must provide a matching X-CSRF-Token
+  if (csrfCookie) {
+    if (!csrfHeader || typeof csrfHeader !== 'string') {
+      return next(
+        new ForbiddenError('CSRF protection failed: Missing required X-CSRF-Token header.'),
+      );
+    }
+    if (csrfCookie !== csrfHeader) {
+      return next(new ForbiddenError('CSRF protection failed: Token mismatch.'));
+    }
   }
 
   next();

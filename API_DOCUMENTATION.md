@@ -48,15 +48,18 @@ All API responses follow a uniform JSON envelope:
 
 ### 1.2 Authentication, Session Delivery & CSRF Defense
 - **Tokens Delivered Exclusively via HttpOnly Cookies:**  
-  Authentication tokens (`jwt_access`, `jwt_refresh`) are transported **strictly via `HttpOnly`, `Secure`, `SameSite=Strict` cookies**. Tokens are never transmitted in JSON response bodies or URL query parameters. Browser clients do not use Bearer authorization headers.
+  Authentication tokens (`access_token`, `refresh_token`) are transported **strictly via `HttpOnly`, `SameSite=Strict` cookies** (`Secure` in production). Tokens are never transmitted in JSON response bodies or URL query parameters. Browser clients do not use Bearer authorization headers.
+  - `access_token`: 15-minute lifetime, `HttpOnly`, `SameSite=Strict`, `Path=/`.
+  - `refresh_token`: 14-day rolling lifetime, `HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`. Enforces token family reuse detection: using a previously-rotated token revokes all active sessions in the family immediately.
+  - `csrf_token`: 14-day lifetime, `HttpOnly: false` (accessible to client JavaScript), `SameSite=Strict`, `Path=/`.
 - **CSRF Defense Strategy:**  
   All state-modifying requests (`POST`, `PUT`, `PATCH`, `DELETE`) require the custom header:  
   `X-Requested-With: XMLHttpRequest`  
-  Additionally, a double-submit CSRF cookie (`X-CSRF-Token`) is validated on mutating operations.
+  Additionally, a double-submit CSRF token (`X-CSRF-Token`) matching the `csrf_token` cookie is validated on mutating operations.
 - **SameSite Deployment Context:**  
-  Assumes that the client application (`app.agree2met.com`) and API (`api.agree2met.com`) are deployed on same-site domains. Deep links from transactional emails (e.g. `/sign/:token`) initiate standard top-level browser GET navigation to the frontend SPA, which then issues same-site API queries with custom headers.
+  Assumes that the client application (`app.agree2met.com`) and API (`api.agree2met.com`) are deployed on same-site domains. Deep links from transactional emails (e.g. `/sign/:token`, `/verify-email?token=...`) initiate standard top-level browser GET navigation to the frontend SPA, which then issues same-site API queries with custom headers.
 - **Hashed Token Resolution:**  
-  All endpoints accepting authentication or invitation tokens (e.g., password reset, email verification, guest signing) compute the SHA-256 hash of the incoming token before querying the database (`verification_token_hash`, `password_reset_token_hash`, `invitation_token_hash`). Plaintext tokens are never stored or logged.
+  All endpoints accepting authentication or invitation tokens (e.g., password reset, email verification, guest signing) compute the SHA-256 hash of the incoming token before querying the database (`verification_token_hash`, `password_reset_token_hash`, `invitation_token_hash`, `refresh_token_hash`). Plaintext tokens are never stored or logged.
 - **No Sensitive Tokens in URL Query Strings:**  
   URLs must never include sensitive access tokens or secret keys in query parameters (such as `?token=...`), which leak via browser history, proxy server logs, and HTTP Referer headers. Document downloads use authenticated endpoints or short-lived, single-use signed download tickets.
 
@@ -168,9 +171,34 @@ All API responses follow a uniform JSON envelope:
 
 ### 3.2 Authentication & Sessions
 
+#### `POST /api/v1/auth/register`
+- **Access Control:** Public
+- **Request Headers:** `Content-Type: application/json`, `X-Requested-With: XMLHttpRequest`
+- **Request Body:**
+```json
+{
+  "email": "alex.rivera@example.com",
+  "password": "SecurePassword!2026",
+  "firstName": "Alex",
+  "lastName": "Rivera",
+  "organizationName": "Rivera Consulting"
+}
+```
+- **Response Body (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "If this email is not already registered, a verification link has been sent."
+  }
+}
+```
+- **Anti-Enumeration:** Always returns the same 201 message even if the email already exists.
+- **Error Codes:** `400 Bad Request` (Password < 10 characters or too common).
+
 #### `POST /api/v1/auth/login`
 - **Access Control:** Public
-- **Request Headers:** `Content-Type: application/json`
+- **Request Headers:** `Content-Type: application/json`, `X-Requested-With: XMLHttpRequest`
 - **Request Body:**
 ```json
 {
@@ -179,8 +207,9 @@ All API responses follow a uniform JSON envelope:
 }
 ```
 - **Response Headers:**  
-  `Set-Cookie: jwt_access=eyJhbGciOi...; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=900`  
-  `Set-Cookie: jwt_refresh=sec_rf_...; Path=/api/v1/auth; HttpOnly; Secure; SameSite=Strict; Max-Age=604800`
+  `Set-Cookie: access_token=eyJhbGciOi...; Path=/; HttpOnly; SameSite=Strict; Max-Age=900`  
+  `Set-Cookie: refresh_token=sec_rf_...; Path=/api/v1/auth; HttpOnly; SameSite=Strict; Max-Age=1209600`  
+  `Set-Cookie: csrf_token=...; Path=/; SameSite=Strict; Max-Age=1209600`
 - **Response Body (200 OK):**
 ```json
 {
@@ -189,20 +218,121 @@ All API responses follow a uniform JSON envelope:
     "user": {
       "id": "c1f7b0a2-8923-4c91-b384-5a7e112d83b1",
       "email": "alex.rivera@example.com",
-      "displayName": "Alex Rivera",
-      "avatarUrl": "avatars/c1f7b0a2.jpg",
-      "isEmailVerified": true
-    },
-    "organization": {
-      "id": "e4b2d8c1-1234-4567-89ab-cdef01234567",
-      "name": "Rivera Consulting",
-      "role": "OWNER"
+      "isEmailVerified": true,
+      "profile": {
+        "displayName": "Alex Rivera",
+        "avatarUrl": "https://..."
+      }
     }
   },
   "message": "Authentication successful. Session established."
 }
 ```
-- **Error Codes:** `400 Bad Request` (Invalid input), `401 Unauthorized` (Invalid credentials), `429 Too Many Requests` (Rate limit exceeded).
+- **Security Protections:**
+  - Tokens are never returned in JSON response bodies.
+  - Progressive lockout: 5 consecutive failed attempts lock the account for 15 minutes (`423 ACCOUNT_LOCKED`).
+  - Unverified email accounts are blocked (`403 EMAIL_NOT_VERIFIED`).
+
+#### `POST /api/v1/auth/refresh-token`
+- **Access Control:** Public (requires `refresh_token` cookie and `X-CSRF-Token` header)
+- **Response Headers:** Rotates `access_token` and `refresh_token` cookies with new cryptographically generated tokens in the same family.
+- **Token Family Reuse Detection:** If a previously-rotated refresh token is presented again (indicating token compromise), all active sessions in the token family are immediately revoked and the request is rejected with `401 REFRESH_TOKEN_REUSE_DETECTED`.
+
+#### `POST /api/v1/auth/verify-email`
+- **Access Control:** Public
+- **Request Headers:** `Content-Type: application/json`, `X-Requested-With: XMLHttpRequest`
+- **Request Body:** `{ "token": "raw_hex_token_from_email" }`
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Email verified successfully. You may now log in."
+}
+```
+- **Error Codes:** `400 Bad Request` (Invalid or expired token).
+
+#### `POST /api/v1/auth/resend-verification`
+- **Access Control:** Public
+- **Request Headers:** `Content-Type: application/json`, `X-Requested-With: XMLHttpRequest`
+- **Request Body:** `{ "email": "alex.rivera@example.com" }`
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "If this email exists and is not verified, a new link has been sent."
+  }
+}
+```
+- **Anti-Enumeration:** Uniform response regardless of whether the email exists.
+
+#### `POST /api/v1/auth/forgot-password`
+- **Access Control:** Public
+- **Request Headers:** `Content-Type: application/json`, `X-Requested-With: XMLHttpRequest`
+- **Request Body:** `{ "email": "alex.rivera@example.com" }`
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "If an account exists with this email, a password reset link has been sent."
+  }
+}
+```
+- **Anti-Enumeration:** Uniform response regardless of whether the email exists.
+
+#### `POST /api/v1/auth/reset-password`
+- **Access Control:** Public
+- **Request Headers:** `Content-Type: application/json`, `X-Requested-With: XMLHttpRequest`
+- **Request Body:**
+```json
+{
+  "token": "raw_hex_token_from_email",
+  "password": "NewStrongPassword!2026"
+}
+```
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Password has been successfully reset. All existing sessions have been revoked."
+}
+```
+- **Security Protections:** Enforces password minimum 10 characters and common-password blacklist check. All existing sessions in `user_sessions` are revoked immediately.
+
+#### `POST /api/v1/auth/logout`
+- **Access Control:** Authenticated
+- **Response Headers:** Clears `access_token`, `refresh_token`, and `csrf_token` cookies (`Max-Age=0`).
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Session terminated successfully."
+}
+```
+
+#### `GET /api/v1/auth/me`
+- **Access Control:** Authenticated
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "c1f7b0a2-8923-4c91-b384-5a7e112d83b1",
+    "email": "alex.rivera@example.com",
+    "isEmailVerified": true,
+    "profile": {
+      "displayName": "Alex Rivera",
+      "avatarUrl": "https://..."
+    },
+    "organization": {
+      "id": "e4b2d8c1-1234-4567-89ab-cdef01234567",
+      "name": "Acme Corporation",
+      "role": "OWNER"
+    }
+  }
+}
+```
 
 #### `GET /api/v1/auth/sessions`
 - **Access Control:** Authenticated
@@ -236,7 +366,152 @@ All API responses follow a uniform JSON envelope:
 
 ---
 
-### 3.3 Public Digital Signing Portal
+### 3.3 Users & Account Management
+
+#### `GET /api/v1/users/profile`
+- **Access Control:** Authenticated
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "c1f7b0a2-8923-4c91-b384-5a7e112d83b1",
+    "email": "alex.rivera@example.com",
+    "displayName": "Alex Rivera",
+    "avatarUrl": "https://...",
+    "jobTitle": "Lead Legal Counsel",
+    "phoneNumber": "+1-555-0199",
+    "timezone": "America/New_York",
+    "dateFormat": "YYYY-MM-DD",
+    "language": "en"
+  }
+}
+```
+
+#### `PUT /api/v1/users/profile`
+- **Access Control:** Authenticated
+- **Request Body:**
+```json
+{
+  "displayName": "Alex Rivera, Esq.",
+  "jobTitle": "General Counsel",
+  "phoneNumber": "+1-555-0199",
+  "timezone": "America/New_York",
+  "dateFormat": "MM/DD/YYYY",
+  "language": "en"
+}
+```
+- **Response Body (200 OK):** Returns updated user profile.
+
+#### `POST /api/v1/users/avatar`
+- **Access Control:** Authenticated
+- **Content-Type:** `multipart/form-data` (field: `avatar`)
+- **Constraints:** Maximum 2MB, allowed MIME types: `image/jpeg`, `image/png`, `image/webp`.
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "avatarUrl": "https://..."
+  },
+  "message": "Avatar uploaded successfully."
+}
+```
+
+#### `PUT /api/v1/users/password`
+- **Access Control:** Authenticated
+- **Request Body:**
+```json
+{
+  "currentPassword": "OldPassword!2026",
+  "newPassword": "NewStrongPassword!2026"
+}
+```
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Password changed successfully."
+}
+```
+- **Validation:** Verifies current password, enforces min 10 characters and blacklist on new password.
+
+#### `POST /api/v1/users/export-data`
+- **Access Control:** Authenticated (GDPR Data Portability)
+- **Response Body (200 OK):** JSON containing user profile, session history, organization memberships, and active agreement references.
+
+#### `DELETE /api/v1/users/account`
+- **Access Control:** Authenticated
+- **Request Body:**
+```json
+{
+  "confirmation": "DELETE",
+  "password": "SecurePassword!2026"
+}
+```
+- **Sole-Owner Protection:** If the user is the sole owner of an organization with active members, deletion is blocked with `400 SOLE_OWNER_CANNOT_DELETE` until ownership is transferred.
+
+---
+
+### 3.4 Organizations & Team Management
+
+#### `GET /api/v1/organizations`
+- **Access Control:** Authenticated
+- **Response Body (200 OK):** List of organizations the authenticated user belongs to with role (`OWNER`, `ADMIN`, `MEMBER`, `VIEWER`).
+
+#### `POST /api/v1/organizations`
+- **Access Control:** Authenticated
+- **Request Body:** `{ "name": "New Venture LLC" }`
+- **Response Body (201 Created):** Creates organization and assigns creator as `OWNER`.
+
+#### `GET /api/v1/organizations/:id`
+- **Access Control:** Authenticated (Member of organization)
+- **Response Body (200 OK):** Organization details and member count.
+
+#### `GET /api/v1/organizations/:id/members`
+- **Access Control:** Authenticated (Member of organization)
+- **Response Body (200 OK):** List of active members with user profiles and roles, plus pending invitations.
+
+#### `POST /api/v1/organizations/:id/members`
+- **Access Control:** Org Owner or Admin
+- **Request Body:**
+```json
+{
+  "email": "teammate@example.com",
+  "role": "MEMBER"
+}
+```
+- **Response Body (201 Created):** Dispatches transactional invitation email with secure token.
+
+#### `PATCH /api/v1/organizations/:id/members/:memberId`
+- **Access Control:** Org Owner or Admin
+- **Request Body:** `{ "role": "ADMIN" | "MEMBER" | "VIEWER" }`
+- **Hierarchy Protection:**
+  - Admins cannot demote or remove Owners (`403 INSUFFICIENT_PERMISSIONS`).
+  - The last Owner of an organization cannot be demoted (`400 CANNOT_DEMOTE_LAST_OWNER`).
+
+#### `DELETE /api/v1/organizations/:id/members/:memberId`
+- **Access Control:** Org Owner or Admin
+- **Hierarchy Protection:**
+  - Admins cannot remove Owners (`403 INSUFFICIENT_PERMISSIONS`).
+  - The last Owner cannot be removed (`400 CANNOT_REMOVE_LAST_OWNER`).
+
+#### `POST /api/v1/organizations/invitations/accept`
+- **Access Control:** Public or Authenticated
+- **Request Body:** `{ "token": "raw_invitation_token" }`
+- **Response Body (200 OK):** Adds user to organization with specified role and marks invitation accepted.
+
+#### `POST /api/v1/organizations/:id/invitations/:invitationId/resend`
+- **Access Control:** Org Owner or Admin
+- **Response Body (200 OK):** Re-issues invitation email with refreshed token expiry.
+
+#### `DELETE /api/v1/organizations/:id/invitations/:invitationId`
+- **Access Control:** Org Owner or Admin
+- **Response Body (200 OK):** Revokes pending invitation.
+
+---
+
+### 3.5 Public Digital Signing Portal
 
 #### `GET /api/v1/signing/invitation/:token`
 - **Access Control:** Public (Token resolved by SHA-256 hash lookup in database)
@@ -305,7 +580,7 @@ All API responses follow a uniform JSON envelope:
 
 ---
 
-### 3.4 AI Agreement Assistant
+### 3.6 AI Agreement Assistant
 
 #### `POST /api/v1/ai/explain-clause`
 - **Access Control:** Authenticated

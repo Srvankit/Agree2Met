@@ -1,11 +1,11 @@
 # AGREE2MET — Digital Agreement Management SaaS Platform
 
-[![Phase](https://img.shields.io/badge/Phase-1%20Foundation%20%26%20Infrastructure-success.svg)](file:///c:/Users/AnkitAccess/Agree2Met/IMPLEMENTATION_ROADMAP.md)
-[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete%20%E2%80%94%20Verified-brightgreen.svg)](file:///c:/Users/AnkitAccess/Agree2Met/DEVELOPMENT_PROGRESS.md)
-[![Architecture](https://img.shields.io/badge/Architecture-Decoupled%20Multi--Tier-orange.svg)](file:///c:/Users/AnkitAccess/Agree2Met/SYSTEM_ARCHITECTURE.md)
-[![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript%20%2B%20Tailwind%20v4-61dafb.svg)](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md#adr-010)
-[![Backend](https://img.shields.io/badge/Backend-Node.js%20(LTS)%20%2B%20Express%20%2B%20TypeScript-339933.svg)](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md#adr-001)
-[![Database](https://img.shields.io/badge/Database-PostgreSQL%2016%20%2B%20Prisma%20ORM-336791.svg)](file:///c:/Users/AnkitAccess/Agree2Met/DATABASE_DESIGN.md)
+[![Phase](https://img.shields.io/badge/Phase-3%20Authentication%20%26%20User%20Management-success.svg)](./IMPLEMENTATION_ROADMAP.md)
+[![Status](https://img.shields.io/badge/Status-Phase%203%20Complete%20%E2%80%94%20Verified-brightgreen.svg)](./DEVELOPMENT_PROGRESS.md)
+[![Architecture](https://img.shields.io/badge/Architecture-Decoupled%20Multi--Tier-orange.svg)](./SYSTEM_ARCHITECTURE.md)
+[![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript%20%2B%20Tailwind%20v4-61dafb.svg)](./TECHNICAL_DECISIONS.md#adr-010)
+[![Backend](https://img.shields.io/badge/Backend-Node.js%20(LTS)%20%2B%20Express%20%2B%20TypeScript-339933.svg)](./TECHNICAL_DECISIONS.md#adr-001)
+[![Database](https://img.shields.io/badge/Database-PostgreSQL%2016%20%2B%20Prisma%20ORM-336791.svg)](./DATABASE_DESIGN.md)
 
 ---
 
@@ -73,10 +73,11 @@ Verify container health:
 docker-compose ps
 ```
 
-### Step 3: Initialize Database Migrations
-Run Prisma migration to initialize the baseline schema on PostgreSQL (port 5433):
+### Step 3: Initialize Database Migrations & Seeds
+Run Prisma migration to initialize the baseline schema on PostgreSQL (port 5433), followed by the seed script to create the initial demo organization and administrator:
 ```powershell
 npm run prisma:migrate --prefix server
+npm run prisma:seed --prefix server
 ```
 
 ### Step 4: Run Development Services
@@ -100,12 +101,33 @@ npm run dev:client
 # Vite client starts at http://localhost:5173
 ```
 
-### Frontend Demo Mode & Credentials
-The frontend operates with mock support out of the box (`VITE_USE_MOCK=true`), making all pages, state transitions, signers, and wizards interactable immediately:
-- **Default Login Email:** `alex@agree2met.com`
-- **Default Password:** `Demo@1234`
-- **Supported Roles:** Owner, Admin, Member, Viewer (switchable inside the workspace settings or mock seed)
-- **Backend Toggle:** Set `VITE_USE_MOCK=false` in `client/.env` to switch from local mock store to live Express API (`http://localhost:5000/api/v1`).
+---
+
+### 3.1 Real Services vs. Mock Mode (Phase 3 Integration)
+
+Agree2Met supports dual-mode operation via the `serviceMode.ts` adapter (ADR-012):
+
+#### Running with Real Authentication & User Management (Phase 3):
+Configure `client/.env` to route authentication, user profiles, and organization/team calls to the live Express API:
+```ini
+VITE_REAL_SERVICES=auth,users,organizations
+VITE_USE_MOCK=false
+```
+- **Seeded Credentials:**
+  - **Email:** `alex@agree2met.com`
+  - **Password:** `Demo@1234`
+  - **Role:** `OWNER` (Organization: Acme Corporation)
+- **Live Security Features Active:**
+  - **Argon2id Hashing:** Minimum 10 characters, common-password blacklist verification.
+  - **Cookie-Only Session Delivery:** 15m `access_token` and 14d `refresh_token` stored strictly in `HttpOnly`, `SameSite=Strict` cookies.
+  - **Token Family Reuse Detection:** Using a previously rotated refresh token revokes all family sessions immediately with HTTP 401.
+  - **CSRF Defense:** Double-submit `X-CSRF-Token` header paired with `X-Requested-With: XMLHttpRequest` on mutating calls.
+  - **Rate Limiting & Lockout:** 5 consecutive failed logins trigger a 15-minute account lockout (`423 ACCOUNT_LOCKED`).
+  - **Transactional Emails:** Email verification links, password reset links, and teammate invitations are queued via BullMQ and inspectable in the Mailpit UI at [http://localhost:8025](http://localhost:8025).
+  - **S3 Profile Avatars:** Real avatar uploads (up to 2MB, MIME-checked) stored in local Zenko S3 storage.
+
+#### Running Full Offline Demo Mode:
+Leave `VITE_USE_MOCK=true` (or omit `VITE_REAL_SERVICES`) to run entirely in-browser against `mockStore.ts` (`agree2met-demo-v4`). All SaaS screens, agreement wizards, and demo workflows operate without requiring backend services.
 
 ---
 
@@ -194,10 +216,10 @@ npm run build --prefix client
 
 | Document | Purpose & Key Content | Direct File Link |
 |---|---|---|
-| **Project Requirements** | Detailed functional requirements for all 12 modules, user personas, non-functional requirements, and failure modes. | [PROJECT_REQUIREMENTS.md](file:///c:/Users/AnkitAccess/Agree2Met/PROJECT_REQUIREMENTS.md) |
-| **System Architecture** | Multi-tier system architecture, Mermaid diagrams, tech stack evaluation, Puppeteer security, and security frameworks. | [SYSTEM_ARCHITECTURE.md](file:///c:/Users/AnkitAccess/Agree2Met/SYSTEM_ARCHITECTURE.md) |
-| **Database Design** | Relational schema with 20 normalized application tables, Mermaid ERD, column constraints, indexing strategies, and seed plans. | [DATABASE_DESIGN.md](file:///c:/Users/AnkitAccess/Agree2Met/DATABASE_DESIGN.md) |
-| **REST API Documentation** | Complete REST endpoint catalogue with OpenAPI-style request/response payloads, authentication, and error models. | [API_DOCUMENTATION.md](file:///c:/Users/AnkitAccess/Agree2Met/API_DOCUMENTATION.md) |
-| **Implementation Roadmap** | 13-phase master execution plan (Phase 0 to 12) detailing scope, components, security, testing, and acceptance criteria. | [IMPLEMENTATION_ROADMAP.md](file:///c:/Users/AnkitAccess/Agree2Met/IMPLEMENTATION_ROADMAP.md) |
-| **Technical Decisions (ADRs)** | 9 Architecture Decision Records detailing rationale for stack selections, security models, PDF generation, and AI guardrails. | [TECHNICAL_DECISIONS.md](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md) |
-| **Development Progress** | Living project status matrix, Phase 1 deliverable inventory, verification results, and risk register. | [DEVELOPMENT_PROGRESS.md](file:///c:/Users/AnkitAccess/Agree2Met/DEVELOPMENT_PROGRESS.md) |
+| **Project Requirements** | Detailed functional requirements for all 12 modules, user personas, non-functional requirements, and failure modes. | [PROJECT_REQUIREMENTS.md](./PROJECT_REQUIREMENTS.md) |
+| **System Architecture** | Multi-tier system architecture, Mermaid diagrams, tech stack evaluation, Puppeteer security, and security frameworks. | [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) |
+| **Database Design** | Relational schema with 20 normalized application tables, Mermaid ERD, column constraints, indexing strategies, and seed plans. | [DATABASE_DESIGN.md](./DATABASE_DESIGN.md) |
+| **REST API Documentation** | Complete REST endpoint catalogue with OpenAPI-style request/response payloads, authentication, and error models. | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) |
+| **Implementation Roadmap** | 13-phase master execution plan (Phase 0 to 12) detailing scope, components, security, testing, and acceptance criteria. | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) |
+| **Technical Decisions (ADRs)** | 9 Architecture Decision Records detailing rationale for stack selections, security models, PDF generation, and AI guardrails. | [TECHNICAL_DECISIONS.md](./TECHNICAL_DECISIONS.md) |
+| **Development Progress** | Living project status matrix, Phase 1 deliverable inventory, verification results, and risk register. | [DEVELOPMENT_PROGRESS.md](./DEVELOPMENT_PROGRESS.md) |
