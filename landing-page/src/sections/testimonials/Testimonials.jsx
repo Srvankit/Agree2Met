@@ -4,31 +4,31 @@
     {
       name: "Sarah ",
       role: "COO, FinTech Core",
-      text: "Agree2Met has cut our contract turnaround time from 5 days to 4 hours. The interface is simply stunning.",
+      text: "Agree2Met reduced our agreement creation time from days to just a few hours. The process is smooth and extremely efficient.",
       img: "https://randomuser.me/api/portraits/women/44.jpg"
     },
     {
       name: "David Miller",
       role: "Legal Counsel, Nexus Global",
-      text: "The version control and audit logs are lifesavers during legal audits. Most reliable platform we've used.",
+      text: "Creating agreements is now quick and hassle-free. The structured format and clarity really stand out.",
       img: "https://randomuser.me/api/portraits/men/32.jpg"
     },
     {
       name: "David Miller",
       role: "Legal Counsel, Nexus Global",
-      text: "The version control and audit logs are lifesavers during legal audits. Most reliable platform we've used.",
+      text: "The platform is intuitive and easy to use. It helped our team manage agreements without confusion or delays.",
       img: "https://randomuser.me/api/portraits/men/32.jpg"
     },
     {
       name: "David Miller",
       role: "Legal Counsel, Nexus Global",
-      text: "The version control and audit logs are lifesavers during legal audits. Most reliable platform we've used.",
+      text: "Agree2Met made our workflow faster and more organized. Sharing and managing agreements is now effortless.",
       img: "https://randomuser.me/api/portraits/men/32.jpg"
     },
     {
       name: "David Miller",
       role: "Legal Counsel, Nexus Global",
-      text: "The version control and audit logs are lifesavers during legal audits. Most reliable platform we've used.",
+      text: "A reliable and professional platform for handling agreements. It saves time and ensures everything is properly structured.",
       img: "https://randomuser.me/api/portraits/men/32.jpg"
     },
     {
@@ -62,8 +62,8 @@
       <section className="testimonials-section" id="testimonials">
 
         <div className="testimonials-header">
-          <h2>What Our Users Say</h2>
-          <p>Trusted by professionals and teams worldwide</p>
+          <h2>What Our Users are Saying</h2>
+          <p>Trusted by professionals, freelancers, and teams for faster and more reliable agreements</p>
         </div>
 
                 <div className="testimonial-scroll">

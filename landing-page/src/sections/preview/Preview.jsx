@@ -17,37 +17,36 @@ export default function Preview() {
         >
 
           <span className="preview-tag">
-            PRODUCT PREVIEW
+            PRODUCT OVERVIEW
           </span>
 
           <h2>
-            Experience AutoTrust <br />
+            Experience Agree2Met <br />
             <span>in Action</span>
           </h2>
 
           <p className="preview-desc">
-            Create, manage, and share agreements seamlessly with a clean,
-            intuitive interface built for speed and trust.
+            Create, manage, and share agreements seamlessly with an intuitive interface designed for speed, accuracy, and trust.
           </p>
 
           <ul className="preview-points">
             <li>
-              <span>⚡</span> Instant agreement generation
+              <span>⚡</span> Instant agreement creation
             </li>
             <li>
-              <span>🔒</span> Secure & reliable workflow
+              <span>🔒</span> Secure and reliable workflow
             </li>
             <li>
-              <span>📄</span> Clean structured documents
+              <span>📄</span> Professionally structured documents
             </li>
           </ul>
 
           <div className="preview-buttons">
             <button className="primary-btn">
-              Get Started
+              Get Started Free
             </button>
             <button className="secondary-btn">
-              View Demo
+              Watch Demo
             </button>
           </div>
 

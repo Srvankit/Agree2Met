@@ -121,6 +121,7 @@ const DashboardLayout = () => {
 
             {/* BOTTOM */}
             <div className="bottom-grid">
+              <div className="bottom-spacer"></div>
               <div className="progress-wrapper">
                   <ProgressOverview />
                </div>

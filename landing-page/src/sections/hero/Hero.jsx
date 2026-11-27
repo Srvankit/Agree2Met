@@ -28,7 +28,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          SECURE & SMART AGREEMENT PLATFORM
+          SMART & SECURE AGREEMENT PLATFORM
         </motion.p>
 
         <motion.h1
@@ -36,7 +36,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          Create Agreements <br />
+          Create Professional Agreements <br />
           <span>in Minutes</span>, Not Hours
         </motion.h1>
 
@@ -46,8 +46,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          AutoTrust helps you generate, manage, and share professional
-          agreements effortlessly with speed and security.
+          AutoTrust helps you create, manage, and share professionally structured agreements with speed, clarity and confidence.
         </motion.p>
 
         <motion.div
