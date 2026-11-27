@@ -3,7 +3,7 @@
 [![Phase](https://img.shields.io/badge/Phase-1%20Foundation%20%26%20Infrastructure-success.svg)](file:///c:/Users/AnkitAccess/Agree2Met/IMPLEMENTATION_ROADMAP.md)
 [![Status](https://img.shields.io/badge/Status-Phase%201%20Complete%20%E2%80%94%20Verified-brightgreen.svg)](file:///c:/Users/AnkitAccess/Agree2Met/DEVELOPMENT_PROGRESS.md)
 [![Architecture](https://img.shields.io/badge/Architecture-Decoupled%20Multi--Tier-orange.svg)](file:///c:/Users/AnkitAccess/Agree2Met/SYSTEM_ARCHITECTURE.md)
-[![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite%20%2B%20CSS%20Modules-61dafb.svg)](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md#adr-002)
+[![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript%20%2B%20Tailwind%20v4-61dafb.svg)](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md#adr-010)
 [![Backend](https://img.shields.io/badge/Backend-Node.js%20(LTS)%20%2B%20Express%20%2B%20TypeScript-339933.svg)](file:///c:/Users/AnkitAccess/Agree2Met/TECHNICAL_DECISIONS.md#adr-001)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL%2016%20%2B%20Prisma%20ORM-336791.svg)](file:///c:/Users/AnkitAccess/Agree2Met/DATABASE_DESIGN.md)
 
@@ -14,7 +14,8 @@
 **Agree2Met** is an enterprise-oriented digital agreement management SaaS platform designed to govern the entire lifecycle of legal agreements and digital contracts—from guided multi-party creation, structured term definition, and draft collaboration, to electronic signature collection, automated expiration monitoring, and tamper-evident document archiving.
 
 ### Core Architecture Highlights:
-- **Decoupled Architecture:** React 18 client (`client/`) powered by Vite and pure CSS Modules (no Tailwind/PostCSS), communicating via cookie-authenticated REST API with Express 4 TypeScript backend (`server/`).
+- **Decoupled Architecture:** React 19 client (`client/`) powered by TypeScript, Vite, TanStack Start / Router, Tailwind CSS v4, and shadcn/ui (ADR-010), communicating via cookie-authenticated REST API with Express 4 TypeScript backend (`server/`).
+- **Comprehensive Mock & Offline Layer:** The client features a versioned mock store (`MOCK_STORE_VERSION = 4`) allowing full standalone exploration of all SaaS screens and state transitions with demo credentials without requiring backend services to be active.
 - **Security by Default:** Zod environment validation, helmet HTTP security headers, CORS origin restrictions with credentials, cookie-only JWT delivery scaffold, and active CSRF protection (`X-Requested-With` header check + double-submit token).
 - **Relational Data Tier:** PostgreSQL 16 managed via Prisma 5 ORM with baseline migrations.
 - **Asynchronous Task Runtime:** Redis 7 powering BullMQ queues (`transactional-email-queue`, `pdf-generation-queue`, `cron-scheduler-queue`) and decoupled background workers.
@@ -99,6 +100,13 @@ npm run dev:client
 # Vite client starts at http://localhost:5173
 ```
 
+### Frontend Demo Mode & Credentials
+The frontend operates with mock support out of the box (`VITE_USE_MOCK=true`), making all pages, state transitions, signers, and wizards interactable immediately:
+- **Default Login Email:** `alex@agree2met.com`
+- **Default Password:** `Demo@1234`
+- **Supported Roles:** Owner, Admin, Member, Viewer (switchable inside the workspace settings or mock seed)
+- **Backend Toggle:** Set `VITE_USE_MOCK=false` in `client/.env` to switch from local mock store to live Express API (`http://localhost:5000/api/v1`).
+
 ---
 
 ## 4. Verification & Testing
@@ -143,10 +151,34 @@ Run all backend integration and unit tests:
 ```powershell
 npm test --prefix server
 ```
-Run all frontend component and API client tests:
+Run all frontend component, lifecycle, and route smoke tests (92 tests passed across 4 suites):
 ```powershell
 npm test --prefix client
 ```
+
+### Frontend Application Routes & Living Showcase
+The frontend Single Page Application is fully built with accessible CSS Modules and interactive mock services on branch `feat/frontend-ui`:
+
+| Route | Description |
+|---|---|
+| `/` | Marketing landing page with value proposition, interactive mock preview, and SES legal notice |
+| `/login` | Authentication page with one-click demo login autofill |
+| `/register`, `/verify-email`, `/forgot-password`, `/reset-password` | Complete auth lifecycle screens |
+| `/app/dashboard` | Executive KPI cards, sparklines, volume trends (`LineChart`), status breakdown (`DonutChart`), category distribution (`BarChart`), deadlines, and crypto integrity indicator |
+| `/app/agreements` | Agreement repository with grid/table view toggle, search, status & category filters, bulk actions, and pagination |
+| `/app/agreements/new` | 6-step creation wizard (Details, Parties, Terms with AI drafter, Milestones, Paper Review, Dispatch) |
+| `/app/agreements/:id` | Agreement detail view with 7 tabs, including in-browser SHA-256 tamper-evident audit verifier and "Simulate Tamper" button |
+| `/sign/:token` | Public guest signing portal with mandatory legal consent checkbox, signature canvas pad, and certificate generation |
+| `/app/documents` | Storage utilization progress bar and central agreement documents repository |
+| `/app/templates` | Standard legal template library with clause preview drawer and 1-click wizard launcher |
+| `/app/deadlines` | Deadlines & reminders management with interactive `Calendar` view |
+| `/app/notifications` | Real-time notification center with category filtering and unread tracking |
+| `/app/analytics` | Contract lifecycle intelligence with RFC 4180 CSV export |
+| `/app/ai` | Dedicated AI assistant hub with clause drafter, risk & obligation analyzer, and chat |
+| `/app/team` | Team member roster, role badges, and invitation modal with RoleGuard |
+| `/app/settings` | User profile, organization settings, password change, 2FA toggle, appearance theme toggle, and JSON backup export |
+| `/dev/components` | Living accessible UI component library showcase |
+| `/status` | Diagnostic system health probe calling backend `/api/v1/health` |
 
 ### Lint and Production Build
 ```powershell

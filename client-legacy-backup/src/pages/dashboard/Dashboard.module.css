@@ -1,0 +1,350 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* KPI Grid */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.kpiCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpiLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpiIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconGreen {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.iconBlue {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.iconAmber {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.iconPurple {
+  background-color: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+.kpiMiddle {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.kpiValue {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.kpiBottom {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.deltaPositive {
+  color: var(--color-success);
+  font-weight: var(--weight-medium);
+}
+
+.urgentBadge {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--weight-semibold);
+}
+
+/* Quick Action Strip */
+.quickActionStrip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2-5) var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+.quickActionLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.quickActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-3);
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.quickActionBtn:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Charts Grid */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
+}
+
+.chartCard {
+  height: 100%;
+}
+
+/* Bottom Grid */
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
+}
+
+.tableCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.rowTitleCell {
+  display: flex;
+  flex-direction: column;
+}
+
+.rowNumber {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-primary);
+  font-weight: var(--weight-medium);
+}
+
+.rowTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.activityTime {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.viewRowBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.viewRowBtn:hover {
+  color: var(--color-text);
+  background-color: var(--color-surface-hover);
+}
+
+.deadlinesCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.deadlinesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+}
+
+.deadlineItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2-5) var(--space-3);
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.deadlineItem:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+.deadlineLeft {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-right: var(--space-2);
+}
+
+.deadlineTitle {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deadlineDate {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.countdownBadge {
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  color: var(--color-warning);
+  background-color: var(--color-warning-bg);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.noDeadlines {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+/* Cryptographic snippet */
+.cryptoSnippet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cryptoHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.cryptoIcon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cryptoHeader strong {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.cryptoHeader p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.cryptoActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1080px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chartsGrid, .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+}

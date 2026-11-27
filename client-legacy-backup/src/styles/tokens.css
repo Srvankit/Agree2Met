@@ -1,0 +1,245 @@
+:root {
+  /* ==========================================================================
+     Agree2Met Design System Tokens
+     ========================================================================== */
+
+  /* Typography Families */
+  --font-sans: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, Cambria, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Typography Scale */
+  --font-size-12: 0.75rem;    /* 12px */
+  --font-size-13: 0.8125rem;  /* 13px */
+  --font-size-14: 0.875rem;   /* 14px - base */
+  --font-size-16: 1rem;       /* 16px */
+  --font-size-18: 1.125rem;   /* 18px */
+  --font-size-20: 1.25rem;    /* 20px */
+  --font-size-24: 1.5rem;     /* 24px */
+  --font-size-30: 1.875rem;   /* 30px */
+  --font-size-36: 2.25rem;    /* 36px */
+  --font-size-48: 3rem;       /* 48px */
+
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  /* Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing Scale (4px base) */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Z-Index Scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layout Widths */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+  --max-content-width: 1360px;
+  --document-width: 816px;
+
+  /* ==========================================================================
+     Theme: Light (Default)
+     ========================================================================== */
+  --bg-app: #F7F8FC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-2: #F1F3FA;
+  --bg-surface-3: #E9ECF5;
+  --border-color: #E3E6F0;
+  --border-hover: #CBD2E6;
+
+  --text-main: #0E1226;
+  --text-muted: #5A6178;
+  --text-subtle: #8A90A6;
+  --text-inverse: #FFFFFF;
+
+  --accent-color: #5B5BF0;
+  --accent-hover: #4A4AE0;
+  --accent-soft: #EEEEFE;
+  --accent-soft-border: #D5D6FB;
+  --focus-ring: rgba(91, 91, 240, 0.4);
+
+  /* Semantic Colors */
+  --color-success: #16A34A;
+  --color-success-soft: #DCFCE7;
+  --color-success-border: #BBF7D0;
+  --color-warning: #D97706;
+  --color-warning-soft: #FEF3C7;
+  --color-warning-border: #FDE68A;
+  --color-danger: #DC2626;
+  --color-danger-soft: #FEE2E2;
+  --color-danger-border: #FECACA;
+  --color-info: #2563EB;
+  --color-info-soft: #DBEAFE;
+  --color-info-border: #BFDBFE;
+
+  /* Agreement Status Badges (Color + Text Token Pairing) */
+  --status-draft-text: #475569;
+  --status-draft-bg: #F1F5F9;
+  --status-draft-border: #CBD5E1;
+
+  --status-pending-text: #B45309;
+  --status-pending-bg: #FEF3C7;
+  --status-pending-border: #FDE68A;
+
+  --status-sent-text: #1D4ED8;
+  --status-sent-bg: #DBEAFE;
+  --status-sent-border: #BFDBFE;
+
+  --status-awaiting-text: #6D28D9;
+  --status-awaiting-bg: #EDE9FE;
+  --status-awaiting-border: #DDD6FE;
+
+  --status-partially-signed-text: #0E7490;
+  --status-partially-signed-bg: #CFFAFE;
+  --status-partially-signed-border: #A5F3FC;
+
+  --status-completed-text: #15803D;
+  --status-completed-bg: #DCFCE7;
+  --status-completed-border: #BBF7D0;
+
+  --status-rejected-text: #B91C1C;
+  --status-rejected-bg: #FEE2E2;
+  --status-rejected-border: #FECACA;
+
+  --status-cancelled-text: #334155;
+  --status-cancelled-bg: #E2E8F0;
+  --status-cancelled-border: #CBD5E1;
+
+  --status-expired-text: #C2410C;
+  --status-expired-bg: #FFEDD5;
+  --status-expired-border: #FED7AA;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(14, 18, 38, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(14, 18, 38, 0.08), 0 2px 6px -1px rgba(14, 18, 38, 0.04);
+  --shadow-lg: 0 12px 28px -4px rgba(14, 18, 38, 0.12), 0 4px 10px -2px rgba(14, 18, 38, 0.06);
+
+  /* Legacy variable mappings for backward compatibility */
+  --color-bg-primary: var(--bg-surface);
+  --color-bg-secondary: var(--bg-app);
+  --color-bg-tertiary: var(--bg-surface-2);
+  --color-text-primary: var(--text-main);
+  --color-text-secondary: var(--text-muted);
+  --color-border: var(--border-color);
+  --color-accent: var(--accent-color);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-soft);
+  --font-family: var(--font-sans);
+}
+
+/* ==========================================================================
+   Theme: Dark
+   ========================================================================== */
+[data-theme="dark"] {
+  --bg-app: #0A0C16;
+  --bg-surface: #111426;
+  --bg-surface-2: #171B31;
+  --bg-surface-3: #1F2440;
+  --border-color: #252A45;
+  --border-hover: #363C60;
+
+  --text-main: #ECEEF9;
+  --text-muted: #A0A6C0;
+  --text-subtle: #6F7692;
+  --text-inverse: #0A0C16;
+
+  --accent-color: #8486FF;
+  --accent-hover: #9C9EFF;
+  --accent-soft: #1B1D3F;
+  --accent-soft-border: #2C2F63;
+  --focus-ring: rgba(132, 134, 255, 0.4);
+
+  /* Semantic Colors Dark */
+  --color-success: #22C55E;
+  --color-success-soft: #052E16;
+  --color-success-border: #14532D;
+  --color-warning: #F59E0B;
+  --color-warning-soft: #451A03;
+  --color-warning-border: #78350F;
+  --color-danger: #EF4444;
+  --color-danger-soft: #450A0A;
+  --color-danger-border: #7F1D1D;
+  --color-info: #3B82F6;
+  --color-info-soft: #1E3A8A;
+  --color-info-border: #1D4ED8;
+
+  /* Status Colors Dark */
+  --status-draft-text: #94A3B8;
+  --status-draft-bg: #1E293B;
+  --status-draft-border: #334155;
+
+  --status-pending-text: #FCD34D;
+  --status-pending-bg: #451A03;
+  --status-pending-border: #78350F;
+
+  --status-sent-text: #93C5FD;
+  --status-sent-bg: #1E3A8A;
+  --status-sent-border: #1D4ED8;
+
+  --status-awaiting-text: #C4B5FD;
+  --status-awaiting-bg: #4C1D95;
+  --status-awaiting-border: #5B21B6;
+
+  --status-partially-signed-text: #67E8F9;
+  --status-partially-signed-bg: #164E63;
+  --status-partially-signed-border: #155E75;
+
+  --status-completed-text: #86EFAC;
+  --status-completed-bg: #14532D;
+  --status-completed-border: #166534;
+
+  --status-rejected-text: #FCA5A5;
+  --status-rejected-bg: #7F1D1D;
+  --status-rejected-border: #991B1B;
+
+  --status-cancelled-text: #94A3B8;
+  --status-cancelled-bg: #334155;
+  --status-cancelled-border: #475569;
+
+  --status-expired-text: #FDBA74;
+  --status-expired-bg: #7C2D12;
+  --status-expired-border: #9A3412;
+
+  /* Shadows Dark */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 30px -4px rgba(0, 0, 0, 0.6);
+}

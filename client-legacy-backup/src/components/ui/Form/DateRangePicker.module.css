@@ -1,0 +1,53 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.inputsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inputCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rangeLabel {
+  font-size: var(--font-size-12);
+  color: var(--text-subtle);
+}
+
+.divider {
+  color: var(--text-subtle);
+  font-weight: var(--font-weight-bold);
+  margin-top: 18px;
+}
+
+.presetsRow {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.presetBtn {
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.presetBtn:hover {
+  background-color: var(--accent-soft);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}

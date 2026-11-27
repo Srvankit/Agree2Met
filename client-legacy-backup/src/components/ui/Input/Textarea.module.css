@@ -1,0 +1,42 @@
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-14);
+  line-height: var(--line-height-normal);
+  color: var(--text-main);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.textarea.error {
+  border-color: var(--color-danger);
+}
+
+.textarea:disabled {
+  background-color: var(--bg-surface-2);
+  color: var(--text-subtle);
+  cursor: not-allowed;
+}
+
+.charCounter {
+  text-align: right;
+  font-size: var(--font-size-12);
+  color: var(--text-subtle);
+  margin-top: 2px;
+}

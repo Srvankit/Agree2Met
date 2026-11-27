@@ -1,0 +1,50 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.label {
+  font-size: var(--font-size-13);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.requiredAsterisk {
+  color: var(--color-danger);
+}
+
+.optionalBadge {
+  font-size: var(--font-size-12);
+  color: var(--text-subtle);
+}
+
+.controlWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.errorMessage {
+  font-size: var(--font-size-12);
+  color: var(--color-danger);
+  margin: 2px 0 0 0;
+  line-height: var(--line-height-normal);
+}
+
+.helpText {
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+  line-height: var(--line-height-normal);
+}

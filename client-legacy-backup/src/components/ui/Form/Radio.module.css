@@ -1,0 +1,76 @@
+.wrapper {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.wrapper.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.inputWrapper {
+  position: relative;
+  display: inline-flex;
+  margin-top: 2px;
+}
+
+.nativeInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+.customCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  transition: all var(--transition-fast);
+}
+
+.nativeInput:focus-visible + .customCircle {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.customCircle.checked {
+  border-color: var(--accent-color);
+}
+
+.innerDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--accent-color);
+  transform: scale(0);
+  transition: transform var(--transition-fast);
+}
+
+.customCircle.checked .innerDot {
+  transform: scale(1);
+}
+
+.labelCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: var(--font-size-14);
+  color: var(--text-main);
+  line-height: var(--line-height-snug);
+}
+
+.description {
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}

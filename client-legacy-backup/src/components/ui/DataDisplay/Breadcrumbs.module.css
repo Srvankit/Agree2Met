@@ -1,0 +1,44 @@
+.nav {
+  display: flex;
+  align-items: center;
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-13);
+}
+
+.homeLink, .link {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.homeLink:hover, .link:hover {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.current {
+  color: var(--text-main);
+  font-weight: var(--font-weight-medium);
+}
+
+.separator {
+  color: var(--text-subtle);
+  margin: 0 var(--space-1);
+  flex-shrink: 0;
+}

@@ -1,0 +1,172 @@
+.signaturePad {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.modeTabs {
+  display: flex;
+  gap: var(--space-1);
+  background-color: var(--color-surface-alt);
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  align-self: flex-start;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.activeTab {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.canvasWrapper {
+  position: relative;
+  background-color: #ffffff;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.canvas {
+  width: 100%;
+  max-width: 500px;
+  height: 200px;
+  display: block;
+}
+
+.baseline {
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  bottom: 40px;
+  height: 1px;
+  background-color: #e2e8f0;
+  pointer-events: none;
+}
+
+.signHereHint {
+  position: absolute;
+  bottom: 20px;
+  font-size: var(--text-xs);
+  color: #94a3b8;
+  pointer-events: none;
+  user-select: none;
+}
+
+.typeControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.textInput {
+  height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.textInput:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+}
+
+.fontSelect {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.fontBtn {
+  padding: var(--space-1-5) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.activeFont {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.uploadControls {
+  display: flex;
+  justify-content: center;
+}
+
+.uploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.hiddenFile {
+  display: none;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2-5);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.actionBtn:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
