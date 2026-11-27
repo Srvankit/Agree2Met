@@ -43,6 +43,13 @@ const envSchema = z.object({
   // Rate Limiter
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
+
+  // Authentication & JWT
+  JWT_ACCESS_SECRET: z.string().default('agree2met_super_secret_jwt_access_key_min_32_characters!'),
+  JWT_ACCESS_EXPIRATION: z.string().default('15m'),
+  JWT_REFRESH_SECRET: z.string().default('agree2met_super_secret_jwt_refresh_key_min_32_characters!'),
+  JWT_REFRESH_EXPIRATION: z.string().default('14d'),
+  COOKIE_DOMAIN: z.string().optional().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
