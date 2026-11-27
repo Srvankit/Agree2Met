@@ -1,7 +1,7 @@
 # AGREE2MET — Digital Agreement Management SaaS Platform
 
-[![Phase](https://img.shields.io/badge/Phase-1%20Foundation%20%26%20Infrastructure-success.svg)](./IMPLEMENTATION_ROADMAP.md)
-[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete%20%E2%80%94%20Verified-brightgreen.svg)](./DEVELOPMENT_PROGRESS.md)
+[![Phase](https://img.shields.io/badge/Phase-3%20Authentication%20%26%20User%20Management-success.svg)](./IMPLEMENTATION_ROADMAP.md)
+[![Status](https://img.shields.io/badge/Status-Phase%203%20Complete%20%E2%80%94%20Verified-brightgreen.svg)](./DEVELOPMENT_PROGRESS.md)
 [![Architecture](https://img.shields.io/badge/Architecture-Decoupled%20Multi--Tier-orange.svg)](./SYSTEM_ARCHITECTURE.md)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript%20%2B%20Tailwind%20v4-61dafb.svg)](./TECHNICAL_DECISIONS.md#adr-010)
 [![Backend](https://img.shields.io/badge/Backend-Node.js%20(LTS)%20%2B%20Express%20%2B%20TypeScript-339933.svg)](./TECHNICAL_DECISIONS.md#adr-001)
@@ -73,10 +73,11 @@ Verify container health:
 docker-compose ps
 ```
 
-### Step 3: Initialize Database Migrations
-Run Prisma migration to initialize the baseline schema on PostgreSQL (port 5433):
+### Step 3: Initialize Database Migrations & Seeds
+Run Prisma migration to initialize the baseline schema on PostgreSQL (port 5433), followed by the seed script to create the initial demo organization and administrator:
 ```powershell
 npm run prisma:migrate --prefix server
+npm run prisma:seed --prefix server
 ```
 
 ### Step 4: Run Development Services
@@ -100,12 +101,33 @@ npm run dev:client
 # Vite client starts at http://localhost:5173
 ```
 
-### Frontend Demo Mode & Credentials
-The frontend operates with mock support out of the box (`VITE_USE_MOCK=true`), making all pages, state transitions, signers, and wizards interactable immediately:
-- **Default Login Email:** `alex@agree2met.com`
-- **Default Password:** `Demo@1234`
-- **Supported Roles:** Owner, Admin, Member, Viewer (switchable inside the workspace settings or mock seed)
-- **Backend Toggle:** Set `VITE_USE_MOCK=false` in `client/.env` to switch from local mock store to live Express API (`http://localhost:5000/api/v1`).
+---
+
+### 3.1 Real Services vs. Mock Mode (Phase 3 Integration)
+
+Agree2Met supports dual-mode operation via the `serviceMode.ts` adapter (ADR-012):
+
+#### Running with Real Authentication & User Management (Phase 3):
+Configure `client/.env` to route authentication, user profiles, and organization/team calls to the live Express API:
+```ini
+VITE_REAL_SERVICES=auth,users,organizations
+VITE_USE_MOCK=false
+```
+- **Seeded Credentials:**
+  - **Email:** `alex@agree2met.com`
+  - **Password:** `Demo@1234`
+  - **Role:** `OWNER` (Organization: Acme Corporation)
+- **Live Security Features Active:**
+  - **Argon2id Hashing:** Minimum 10 characters, common-password blacklist verification.
+  - **Cookie-Only Session Delivery:** 15m `access_token` and 14d `refresh_token` stored strictly in `HttpOnly`, `SameSite=Strict` cookies.
+  - **Token Family Reuse Detection:** Using a previously rotated refresh token revokes all family sessions immediately with HTTP 401.
+  - **CSRF Defense:** Double-submit `X-CSRF-Token` header paired with `X-Requested-With: XMLHttpRequest` on mutating calls.
+  - **Rate Limiting & Lockout:** 5 consecutive failed logins trigger a 15-minute account lockout (`423 ACCOUNT_LOCKED`).
+  - **Transactional Emails:** Email verification links, password reset links, and teammate invitations are queued via BullMQ and inspectable in the Mailpit UI at [http://localhost:8025](http://localhost:8025).
+  - **S3 Profile Avatars:** Real avatar uploads (up to 2MB, MIME-checked) stored in local Zenko S3 storage.
+
+#### Running Full Offline Demo Mode:
+Leave `VITE_USE_MOCK=true` (or omit `VITE_REAL_SERVICES`) to run entirely in-browser against `mockStore.ts` (`agree2met-demo-v4`). All SaaS screens, agreement wizards, and demo workflows operate without requiring backend services.
 
 ---
 

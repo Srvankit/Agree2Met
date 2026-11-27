@@ -18,6 +18,8 @@
 - [ADR-008: AI Assistant Architecture & Safety Guardrails](#adr-008-ai-assistant-architecture--safety-guardrails)
 - [ADR-009: File Storage Strategy & Access Control](#adr-009-file-storage-strategy--access-control)
 - [ADR-010: Frontend Stack Migration to Lovable (React 19 + TypeScript + Vite + TanStack Start + Tailwind CSS + shadcn/ui)](#adr-010-frontend-stack-migration-to-lovable-react-19--typescript--vite--tanstack-start--tailwind-css--shadcnui)
+- [ADR-011: Refresh Token Family Rotation & Reuse Detection](#adr-011-refresh-token-family-rotation--reuse-detection)
+- [ADR-012: Incremental Real Service Integration & Mock Switching](#adr-012-incremental-real-service-integration--mock-switching)
 - [Shared Contracts Plan & API Synchronization](#shared-contracts-plan--api-synchronization)
 - [Frontend Service to Backend API Mapping](#frontend-service-to-backend-api-mapping)
 
@@ -248,6 +250,67 @@ To guarantee high fidelity and zero crashes during frontend-first reviews:
 
 ---
 
+## ADR-011: Refresh Token Family Rotation & Reuse Detection
+
+### Context
+Single-Page Applications require long-lived user sessions without exposing permanent tokens to Cross-Site Scripting (XSS) via `localStorage` or `sessionStorage`. While storing tokens in `HttpOnly`, `SameSite=Strict` cookies eliminates JavaScript readability, refresh tokens are still vulnerable to theft if an attacker intercepts cookies or accesses an active machine. To mitigate token hijacking, modern security standards (OAuth 2.0 Security BCP and RFC 6749) mandate refresh token rotation paired with family reuse detection.
+
+### Decision
+Implement **Cryptographically Bound Refresh Token Rotation with Token Family Reuse Detection**:
+1. **Cookie-Only Delivery:**
+   - `access_token`: 15-minute lifetime, `HttpOnly`, `SameSite=Strict`, `Path=/`, `Secure` in production.
+   - `refresh_token`: 14-day rolling lifetime, `HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`, `Secure` in production.
+   - Tokens are **strictly excluded** from JSON response bodies.
+2. **Hashed Persistence & Family Tracking:**
+   - Raw tokens are 64-character random hex strings (`crypto.randomBytes(32)`).
+   - The database persists only the SHA-256 hash in the `user_sessions` table (`refresh_token_hash`).
+   - Every session is assigned a persistent `family_id` (UUID).
+3. **Single-Use Rotation:**
+   - Upon invoking `POST /api/v1/auth/refresh-token`, the presented token hash is looked up in `user_sessions`.
+   - If valid and active, a new raw refresh token is generated, its hash is recorded in `user_sessions`, `last_used_at` is updated, and both `access_token` and `refresh_token` cookies are rotated. The `family_id` is retained.
+4. **Token Family Reuse Detection:**
+   - If an expired or already-rotated token hash is presented, it indicates that a previous token has been stolen or replayed.
+   - The server triggers an immediate security alert: **all sessions belonging to the same `family_id` are revoked instantly** (`is_revoked = true`).
+   - The request is terminated with HTTP 401 `REFRESH_TOKEN_REUSE_DETECTED`.
+
+### Consequences
+- Legitimate users whose refresh tokens are compromised are logged out across that session tree, preventing ongoing unauthorized access.
+- Race conditions during rapid parallel requests from the client are mitigated by the frontend `apiClient`'s single-flight promise deduplication.
+
+---
+
+## ADR-012: Incremental Real Service Integration & Mock Switching
+
+### Context
+Phase 2 imported a complete, high-fidelity frontend with 42 accessible UI components and 14 mock service adapters. The backend, however, is implemented iteratively across Phases 3 through 10. Attempting a monolithic "all-or-nothing" switch from mock to live backend would cause application-wide breakages while subsequent backend domains (e.g., Agreements, AI, Signing) are still under construction.
+
+### Decision
+Adopt an **Incremental Service Mode Adapter Strategy** governed by configuration:
+1. **Fine-Grained Configuration (`VITE_REAL_SERVICES`):**
+   - Controlled via environment variable `VITE_REAL_SERVICES` (comma-separated list, e.g. `auth,users,organizations`).
+   - Centralized check in `client/src/services/serviceMode.ts`:
+     ```typescript
+     export function isServiceReal(serviceName: string): boolean {
+       if (import.meta.env.VITE_USE_MOCK === 'false') return true;
+       const list = (import.meta.env.VITE_REAL_SERVICES || '').split(',').map((s: string) => s.trim().toLowerCase());
+       return list.includes(serviceName.toLowerCase());
+     }
+     ```
+2. **Dual-Mode Service Implementations:**
+   - Phase 3 services (`authService.ts`, `userService.ts`, `organizationsService.ts`) check `isServiceReal('service_name')`.
+   - When `true`, requests execute via `apiClient` against live Express endpoints (`/api/v1/...`).
+   - When `false`, requests execute against `mockStore.ts` using localStorage state.
+3. **Single-Flight 401 Token Refresh with Queue Re-play:**
+   - The `apiClient` transparently captures 401 responses, queues concurrent requests, triggers a single `POST /api/v1/auth/refresh-token`, and replays failed requests once refreshed.
+4. **CSRF Reflection:**
+   - `apiClient` automatically reads the `csrf_token` cookie and mirrors it into the `X-CSRF-Token` header on mutating methods (`POST`, `PUT`, `PATCH`, `DELETE`), alongside `X-Requested-With: XMLHttpRequest`.
+
+### Consequences
+- Enables testing and verifying real Phase 3 authentication, user management, and team RBAC in the live browser while keeping the remainder of the UI fully interactive and functional via mock domain models.
+- Future phases (Phase 4, 5, 6, etc.) can be activated individually by adding their service names to `VITE_REAL_SERVICES`.
+
+---
+
 ## Shared Contracts Plan & API Synchronization
 
 With both the backend (`server/`) and frontend (`client/`) utilizing TypeScript, Agree2Met establishes a robust shared contract strategy to guarantee schema parity without code duplication:
@@ -277,12 +340,29 @@ The following table maps the frontend service layer (`client/src/services/`) to 
 
 | Service Module | Function | HTTP Method | Endpoint Path | Request Payload / Params | Response Data | Current Status |
 |---|---|---|---|---|---|---|
-| **api.ts** | `getHealth()` | `GET` | `/api/v1/health` | None | `{ status, uptime, dependencies: { database, redis, storage, smtp } }` | **Implemented** |
-| **api.ts** | `sendTestEmail()` | `POST` | `/api/v1/dev/test-email` | `{ to: string, subject: string, text: string }` | `{ messageId, accepted: string[] }` | **Implemented** |
-| **authService.ts** | `login()` | `POST` | `/api/v1/auth/login` | `{ email, password }` | `{ user: { id, email, full_name, role } }` | Mocked (Target Phase 3) |
-| **authService.ts** | `register()` | `POST` | `/api/v1/auth/register` | `{ email, password, full_name, organization_name }` | `{ user, message }` | Mocked (Target Phase 3) |
-| **authService.ts** | `logout()` | `POST` | `/api/v1/auth/logout` | None | `{ message: "Logged out successfully" }` | Mocked (Target Phase 3) |
-| **authService.ts** | `getCurrentUser()` | `GET` | `/api/v1/auth/me` | None | `{ user: UserProfile }` | Mocked (Target Phase 3) |
+| **api.ts** | `getHealth()` | `GET` | `/api/v1/health` | None | `{ status, uptime, dependencies: { database, redis, storage, smtp } }` | **Implemented (Phase 1)** |
+| **api.ts** | `sendTestEmail()` | `POST` | `/api/v1/dev/test-email` | `{ to: string, subject: string, text: string }` | `{ messageId, accepted: string[] }` | **Implemented (Phase 1)** |
+| **authService.ts** | `login()` | `POST` | `/api/v1/auth/login` | `{ email, password }` | `{ user: { id, email, isEmailVerified, profile } }` | **Implemented (Phase 3)** |
+| **authService.ts** | `register()` | `POST` | `/api/v1/auth/register` | `{ email, password, firstName, lastName, organizationName }` | `{ message }` | **Implemented (Phase 3)** |
+| **authService.ts** | `logout()` | `POST` | `/api/v1/auth/logout` | None | `{ message: "Session terminated successfully." }` | **Implemented (Phase 3)** |
+| **authService.ts** | `getCurrentUser()` | `GET` | `/api/v1/auth/me` | None | `{ user: UserProfile, organization: OrgSummary }` | **Implemented (Phase 3)** |
+| **authService.ts** | `refreshToken()` | `POST` | `/api/v1/auth/refresh-token` | None (HttpOnly cookie) | Sets rotated cookies | **Implemented (Phase 3)** |
+| **authService.ts** | `verifyEmail()` | `POST` | `/api/v1/auth/verify-email` | `{ token }` | `{ message }` | **Implemented (Phase 3)** |
+| **authService.ts** | `forgotPassword()`| `POST` | `/api/v1/auth/forgot-password` | `{ email }` | `{ message }` | **Implemented (Phase 3)** |
+| **authService.ts** | `resetPassword()` | `POST` | `/api/v1/auth/reset-password` | `{ token, password }` | `{ message }` | **Implemented (Phase 3)** |
+| **authService.ts** | `getSessions()` | `GET` | `/api/v1/auth/sessions` | None | `{ sessions: SessionItem[] }` | **Implemented (Phase 3)** |
+| **authService.ts** | `revokeSession()` | `DELETE`| `/api/v1/auth/sessions/:id` | Route param: `id` | `{ message }` | **Implemented (Phase 3)** |
+| **userService.ts** | `getProfile()` | `GET` | `/api/v1/users/profile` | None | `{ profile: UserProfile }` | **Implemented (Phase 3)** |
+| **userService.ts** | `updateProfile()` | `PUT` | `/api/v1/users/profile` | `{ displayName, jobTitle, timezone, ... }` | `{ profile: UserProfile }` | **Implemented (Phase 3)** |
+| **userService.ts** | `uploadAvatar()` | `POST` | `/api/v1/users/avatar` | Multipart FormData: `avatar` | `{ avatarUrl }` | **Implemented (Phase 3)** |
+| **userService.ts** | `changePassword()`| `PUT` | `/api/v1/users/password` | `{ currentPassword, newPassword }` | `{ message }` | **Implemented (Phase 3)** |
+| **userService.ts** | `exportData()` | `POST` | `/api/v1/users/export-data` | None | `{ export: UserExportData }` | **Implemented (Phase 3)** |
+| **userService.ts** | `deleteAccount()` | `DELETE`| `/api/v1/users/account` | `{ confirmation: "DELETE", password }` | `{ message }` | **Implemented (Phase 3)** |
+| **organizationsService**| `getOrgSettings()`| `GET` | `/api/v1/organizations/:id` | Route param: `id` | `{ organization: OrgDetails }` | **Implemented (Phase 3)** |
+| **organizationsService**| `getMembers()` | `GET` | `/api/v1/organizations/:id/members` | Route param: `id` | `{ members: MemberItem[], invitations: InvitationItem[] }` | **Implemented (Phase 3)** |
+| **organizationsService**| `inviteMember()` | `POST` | `/api/v1/organizations/:id/members` | `{ email, role }` | `{ invitation: InvitationItem }` | **Implemented (Phase 3)** |
+| **organizationsService**| `updateMemberRole()`| `PATCH`| `/api/v1/organizations/:id/members/:memberId`| `{ role }` | `{ member: MemberItem }` | **Implemented (Phase 3)** |
+| **organizationsService**| `removeMember()` | `DELETE`| `/api/v1/organizations/:id/members/:memberId`| Route param: `memberId` | `{ message }` | **Implemented (Phase 3)** |
 | **agreementsService** | `getAgreements()` | `GET` | `/api/v1/agreements` | Query: `?status=&category=&search=&page=&limit=` | `{ agreements: Agreement[], total, page, limit }` | Mocked (Target Phase 6) |
 | **agreementsService** | `getAgreementById()` | `GET` | `/api/v1/agreements/:id` | Route param: `id` | `{ agreement: AgreementDetail }` | Mocked (Target Phase 6) |
 | **agreementsService** | `createAgreement()` | `POST` | `/api/v1/agreements` | `{ title, category_id, parties, clauses, ... }` | `{ agreement: Agreement }` | Mocked (Target Phase 5) |
@@ -294,6 +374,4 @@ The following table maps the frontend service layer (`client/src/services/`) to 
 | **documentsService** | `getPdfDownloadUrl()`| `GET` | `/api/v1/agreements/:id/pdf/download` | None | `{ download_url: string, expires_at: string }` | Mocked (Target Phase 6) |
 | **aiService** | `draftClause()` | `POST` | `/api/v1/ai/draft-clause` | `{ prompt, category, context }` | `{ clause: { title, body, explanation } }` | Mocked (Target Phase 9) |
 | **aiService** | `analyzeRisk()` | `POST` | `/api/v1/ai/analyze-risks` | `{ agreement_id }` | `{ risks: RiskItem[], disclaimer: string }` | Mocked (Target Phase 9) |
-| **organizationsService**| `getOrgSettings()`| `GET` | `/api/v1/organizations/current` | None | `{ organization: OrgDetails, members: Member[] }` | Mocked (Target Phase 3) |
-| **organizationsService**| `updateSettings()` | `PATCH`| `/api/v1/organizations/current` | `{ name, branding: { logo, color } }` | `{ organization: OrgDetails }` | Mocked (Target Phase 3) |
 | **notificationsService**| `listNotifications()`| `GET` | `/api/v1/notifications` | Query: `?read=false` | `{ notifications: Notification[], unread_count }`| Mocked (Target Phase 8) |
