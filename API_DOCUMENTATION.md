@@ -95,14 +95,17 @@ All API responses follow a uniform JSON envelope:
 | **Orgs** | `GET` | `/organizations/:id/members` | List organization team members | Org Admin |
 | **Orgs** | `POST` | `/organizations/:id/members` | Invite new member to organization | Org Admin |
 | **Orgs** | `POST` | `/organizations/invitations/accept` | Accept an organization team invite | Authenticated |
-| **Categories**| `GET` | `/categories` | List system & organization agreement categories | Authenticated |
+| **Categories**| `GET` | `/agreement-categories` | List system & organization agreement categories | Authenticated |
 | **Categories**| `POST` | `/categories` | Create custom agreement category | Org Admin |
 | **Categories**| `GET` | `/categories/:id` | Get details of a single category | Authenticated |
 | **Categories**| `PUT` | `/categories/:id` | Update custom category details | Org Admin |
 | **Categories**| `DELETE`| `/categories/:id` | Delete custom category (if unused) | Org Admin |
-| **Dashboard** | `GET` | `/dashboard/stats` | Retrieve aggregate KPI metrics | Authenticated |
-| **Dashboard** | `GET` | `/dashboard/activity` | Retrieve recent activity stream | Authenticated |
+| **Dashboard** | `GET` | `/dashboard/stats` | Retrieve aggregate KPI metrics (total, running, deltas) | Authenticated |
+| **Dashboard** | `GET` | `/dashboard/activity` | Retrieve recent activity stream (cursor pagination) | Authenticated |
 | **Dashboard** | `GET` | `/dashboard/deadlines` | Retrieve agreements with upcoming deadlines | Authenticated |
+| **Dashboard** | `GET` | `/dashboard/recent` | Retrieve latest agreements created | Authenticated |
+| **Analytics** | `GET` | `/analytics/overview` | Time series, distributions, percentiles, financial totals | Authenticated |
+| **Analytics** | `GET` | `/analytics/export.csv` | Stream RFC 4180 CSV with formula injection defense | Authenticated |
 | **Agreements**| `GET` | `/agreements` | Paginated list with filtering & search | Authenticated |
 | **Agreements**| `POST` | `/agreements` | Create draft agreement (Wizard save) | Authenticated |
 | **Agreements**| `GET` | `/agreements/:id` | Get full agreement details, clauses, parties | Authenticated |
@@ -511,7 +514,345 @@ All API responses follow a uniform JSON envelope:
 
 ---
 
-### 3.5 Public Digital Signing Portal
+### 3.5 Dashboard Endpoints
+
+#### `GET /api/v1/dashboard/stats`
+- **Access Control:** Authenticated (Member of Organization)
+- **Description:** Single-query SQL aggregation calculating KPI counts, rates, turnaround durations, and month-over-month deltas.
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "total": 62,
+    "completed": 16,
+    "running": 23,
+    "pendingSignatures": 10,
+    "expired": 4,
+    "completionRate": 25.8,
+    "avgTurnaroundHours": 42.4,
+    "deltas": {
+      "totalDeltaPercent": 8.5,
+      "completedDeltaPercent": 14.2,
+      "runningDeltaPercent": -3.1
+    }
+  },
+  "message": "Dashboard statistics retrieved successfully."
+}
+```
+
+#### `GET /api/v1/dashboard/activity`
+- **Access Control:** Authenticated (Member of Organization)
+- **Query Parameters:**
+  - `limit` (optional, integer 1-50, default: 20)
+  - `type` (optional, string: `ALL`, `AGREEMENT`, `SIGNATURE`, `SYSTEM`, default: `ALL`)
+  - `cursor` (optional, ISO datetime string for cursor pagination)
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "activities": [
+      {
+        "id": "e4f8d9c2-...",
+        "action": "AGREEMENT_SIGNED",
+        "entityType": "AGREEMENT",
+        "entityId": "a1b2c3d4-...",
+        "metadata": {
+          "title": "Master Services Agreement",
+          "signerName": "Sarah Jenkins"
+        },
+        "createdAt": "2026-11-27T14:30:00.000Z",
+        "user": {
+          "id": "u1v2w3x4-...",
+          "email": "sarah@partner.com",
+          "name": "Sarah Jenkins"
+        }
+      }
+    ],
+    "nextCursor": "2026-11-26T18:15:00.000Z",
+    "hasMore": true
+  },
+  "message": "Activity stream retrieved successfully."
+}
+```
+
+#### `GET /api/v1/dashboard/deadlines`
+- **Access Control:** Authenticated (Member of Organization)
+- **Query Parameters:**
+  - `days` (optional, integer 1-90, default: 14)
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "windowDays": 14,
+    "count": 3,
+    "deadlines": [
+      {
+        "id": "a1b2c3d4-...",
+        "referenceNumber": "ACM-2026-012",
+        "title": "Vendor Supply Agreement",
+        "status": "AWAITING_SIGNATURES",
+        "expirationDate": "2026-12-05",
+        "daysRemaining": 8,
+        "isOverdue": false,
+        "counterpartyName": "Apex Logistics"
+      }
+    ]
+  },
+  "message": "Upcoming deadlines retrieved successfully."
+}
+```
+
+#### `GET /api/v1/dashboard/recent`
+- **Access Control:** Authenticated (Member of Organization)
+- **Query Parameters:**
+  - `limit` (optional, integer 1-20, default: 5)
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "agreements": [
+      {
+        "id": "a1b2c3d4-...",
+        "referenceNumber": "ACM-2026-062",
+        "title": "Independent Contractor Agreement",
+        "status": "DRAFT",
+        "category": { "name": "Contractor", "slug": "contractor" },
+        "createdAt": "2026-11-27T10:00:00.000Z",
+        "updatedAt": "2026-11-27T10:00:00.000Z"
+      }
+    ]
+  },
+  "message": "Recent agreements retrieved successfully."
+}
+```
+
+---
+
+### 3.6 Analytics Engine Endpoints
+
+#### `GET /api/v1/analytics/overview`
+- **Access Control:** Authenticated (Member of Organization)
+- **Query Parameters:**
+  - `from` (optional, ISO datetime string)
+  - `to` (optional, ISO datetime string)
+  - `granularity` (optional, `day` | `week` | `month` | `quarter`, default: `month`)
+- **Description:** Complete analytical aggregation computed in PostgreSQL using `generate_series`, conditional filters, and `PERCENTILE_CONT(0.5)`. Zero-fills time series intervals.
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "timeRange": {
+      "from": "2025-11-27T00:00:00.000Z",
+      "to": "2026-11-27T23:59:59.999Z",
+      "granularity": "month"
+    },
+    "summary": {
+      "totalCreated": 62,
+      "totalCompleted": 16,
+      "totalValue": 2772000,
+      "currency": "USD"
+    },
+    "timeSeries": [
+      {
+        "intervalStart": "2026-01-01T00:00:00.000Z",
+        "createdCount": 4,
+        "completedCount": 2,
+        "totalValue": 180000
+      }
+    ],
+    "statusDistribution": [
+      { "status": "COMPLETED", "count": 16, "percentage": 25.8 },
+      { "status": "AWAITING_SIGNATURES", "count": 10, "percentage": 16.1 }
+    ],
+    "categoryDistribution": [
+      { "categoryName": "Non-Disclosure Agreement (NDA)", "categorySlug": "nda", "count": 12, "percentage": 19.4 }
+    ],
+    "turnaroundMetrics": {
+      "avgTurnaroundHours": 42.4,
+      "medianTurnaroundHours": 32.5,
+      "p75TurnaroundHours": 55.0,
+      "p90TurnaroundHours": 78.2
+    },
+    "signerMetrics": {
+      "avgSignerResponseHours": 20.2,
+      "fastestSignerResponseHours": 1.5,
+      "totalSignaturesRecorded": 48
+    }
+  },
+  "message": "Analytics overview retrieved successfully."
+}
+```
+
+#### `GET /api/v1/analytics/export.csv`
+- **Access Control:** Authenticated (Member of Organization)
+- **Description:** Streams RFC 4180 compliant CSV file containing agreement metadata, financial terms, and execution timestamps.
+- **Response Headers:**
+  - `Content-Type: text/csv; charset=utf-8`
+  - `Content-Disposition: attachment; filename="agree2met-analytics-YYYY-MM-DD.csv"`
+- **Formula Injection Defense:** Any cell value starting with `=`, `+`, `-`, `@`, `\t`, or `\r` is prepended with a single quote `'` to prevent remote code execution or formula injection in Excel/Calc.
+
+---
+
+### 3.7 Agreements & Categories Read Endpoints
+
+#### `GET /api/v1/agreement-categories`
+- **Access Control:** Authenticated (Member of Organization)
+- **Description:** Returns all system default categories and organization-specific custom categories, annotated with agreement counts.
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "categories": [
+      {
+        "id": "cat-uuid...",
+        "name": "Non-Disclosure Agreement (NDA)",
+        "slug": "nda",
+        "description": "Standard mutual or unilateral non-disclosure agreement.",
+        "iconName": "Shield",
+        "isSystemDefault": true,
+        "agreementCount": 12
+      }
+    ]
+  },
+  "message": "Agreement categories retrieved successfully."
+}
+```
+
+#### `GET /api/v1/agreements`
+- **Access Control:** Authenticated (Member of Organization)
+- **Query Parameters:**
+  - `page` (optional, integer >= 1, default: 1)
+  - `limit` (optional, integer 1-100, default: 20)
+  - `status` (optional, comma-separated or single enum: `DRAFT`, `COMPLETED`, etc.)
+  - `categoryId` (optional, UUID)
+  - `search` (optional, text search against title or reference number)
+  - `sortBy` (optional: `createdAt`, `title`, `status`, `expirationDate`, default: `createdAt`)
+  - `sortOrder` (optional: `asc` | `desc`, default: `desc`)
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "agreements": [
+      {
+        "id": "a1b2c3d4-...",
+        "referenceNumber": "ACM-2026-001",
+        "title": "Master Services Agreement - Alpha",
+        "status": "COMPLETED",
+        "category": { "id": "...", "name": "Master Services Agreement (MSA)", "slug": "msa" },
+        "creator": { "id": "...", "displayName": "Alex Rivera", "email": "alex@acme.com" },
+        "effectiveDate": "2026-01-15",
+        "expirationDate": "2027-01-15",
+        "completedAt": "2026-01-18T10:00:00.000Z",
+        "totalSignersCount": 2,
+        "completedSignersCount": 2,
+        "paymentTerms": { "totalAmount": 75000, "currency": "USD" },
+        "createdAt": "2026-01-15T09:00:00.000Z",
+        "updatedAt": "2026-01-18T10:00:00.000Z"
+      }
+    ]
+  },
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 62,
+    "totalPages": 4
+  },
+  "message": "Agreements retrieved successfully."
+}
+```
+
+#### `GET /api/v1/agreements/:id`
+- **Access Control:** Authenticated (Member of Organization)
+- **Description:** Returns full agreement detail including counterparties, clauses, financial payment terms, and the complete cryptographically verified SHA-256 audit trail.
+- **Response Body (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "agreement": {
+      "id": "a1b2c3d4-...",
+      "referenceNumber": "ACM-2026-001",
+      "title": "Master Services Agreement - Alpha",
+      "status": "COMPLETED",
+      "category": { "name": "Master Services Agreement (MSA)", "slug": "msa" },
+      "parties": [
+        {
+          "id": "p1...",
+          "name": "Jane Doe",
+          "email": "jane@partner.com",
+          "role": "SIGNER",
+          "status": "SIGNED",
+          "signedAt": "2026-01-18T09:30:00.000Z"
+        }
+      ],
+      "clauses": [
+        {
+          "sectionNumber": "1.0",
+          "title": "Scope of Engagement",
+          "content": "Full scope description..."
+        }
+      ],
+      "paymentTerms": {
+        "totalAmount": 75000,
+        "currency": "USD",
+        "paymentSchedule": "MILESTONE"
+      },
+      "auditTrail": [
+        {
+          "id": "evt-1...",
+          "eventType": "AGREEMENT_CREATED",
+          "actorType": "USER",
+          "actorName": "Alex Rivera",
+          "actorEmail": "alex@acme.com",
+          "previousEventHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "eventHash": "a5e8f...",
+          "createdAt": "2026-01-15T09:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "message": "Agreement retrieved successfully."
+}
+```
+
+---
+
+### 3.8 Safe Write Guards (Deferred Phase 5 Endpoints)
+
+Unbuilt agreement mutation endpoints are guarded with typed HTTP 501 responses to prevent unintended writes or data corruption prior to Phase 5:
+- `POST /api/v1/agreements` (Agreement creation wizard)
+- `PUT /api/v1/agreements/:id` (Agreement edit)
+- `PATCH /api/v1/agreements/:id/status` (State transitions)
+- `POST /api/v1/agreements/:id/duplicate` (Clone agreement)
+- `POST /api/v1/agreements/:id/archive` (Archive agreement)
+- `POST /api/v1/agreements/:id/unarchive` (Unarchive agreement)
+- `DELETE /api/v1/agreements/:id` (Delete draft agreement)
+
+#### Response Envelope (HTTP 501 Not Implemented):
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_AVAILABLE_YET",
+    "message": "Agreement mutation operations are scheduled for Phase 5 (Agreement Creation Engine). Read operations are fully available.",
+    "details": [
+      { "operation": "create", "availableInPhase": "Phase 5" }
+    ]
+  },
+  "timestamp": "2026-11-27T18:00:00.000Z"
+}
+```
+
+---
+
+### 3.9 Public Digital Signing Portal
 
 #### `GET /api/v1/signing/invitation/:token`
 - **Access Control:** Public (Token resolved by SHA-256 hash lookup in database)

@@ -485,47 +485,165 @@ CREATE INDEX idx_ai_messages_conv ON ai_messages(conversation_id, created_at ASC
 
 ---
 
-## 4. Prisma Schema Modeling Preview (`schema.prisma`)
+## 4. Prisma Schema Implementation (`server/prisma/schema.prisma`)
+
+Implemented in migration `20261127160435_init_agreements_and_analytics`:
 
 ```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+// Phase 4 Agreement & Analytics Read Models
+
+model AgreementCategory {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String?  @map("organization_id") @db.Uuid
+  name            String   @db.VarChar(100)
+  slug            String   @db.VarChar(100)
+  description     String?  @db.Text
+  iconName        String   @default("FileText") @map("icon_name") @db.VarChar(50)
+  isSystemDefault Boolean  @default(false) @map("is_system_default")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agreements   Agreement[]
+
+  @@index([slug], map: "idx_categories_slug")
+  @@index([organizationId], map: "idx_categories_org")
+  @@map("agreement_categories")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model Agreement {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referenceNumber       String    @map("reference_number") @db.VarChar(100)
+  organizationId        String    @map("organization_id") @db.Uuid
+  creatorId             String    @map("creator_id") @db.Uuid
+  categoryId            String    @map("category_id") @db.Uuid
+  title                 String    @db.VarChar(300)
+  description           String?   @db.Text
+  status                String    @default("DRAFT") @db.VarChar(50)
+  signingOrder          String    @default("PARALLEL") @map("signing_order") @db.VarChar(20)
+  currentSignerSequence Int       @default(1) @map("current_signer_sequence")
+  totalSignersCount     Int       @default(0) @map("total_signers_count")
+  completedSignersCount Int       @default(0) @map("completed_signers_count")
+  effectiveDate         DateTime? @map("effective_date") @db.Date
+  expirationDate        DateTime? @map("expiration_date") @db.Date
+  completedAt           DateTime? @map("completed_at") @db.Timestamptz
+  cancelledAt           DateTime? @map("cancelled_at") @db.Timestamptz
+  cancellationReason    String?   @map("cancellation_reason") @db.Text
+  rejectionReason       String?   @map("rejection_reason") @db.Text
+  isArchived            Boolean   @default(false) @map("is_archived")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  creator      User              @relation("AgreementCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+  category     AgreementCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  parties      AgreementParty[]
+  clauses      AgreementClause[]
+  paymentTerms AgreementPaymentTerm?
+  auditEvents  AuditEvent[]
+
+  @@unique([organizationId, referenceNumber], name: "uq_org_reference")
+  @@index([organizationId, status], map: "idx_agreements_org_status")
+  @@index([organizationId, createdAt], map: "idx_agreements_org_created_at")
+  @@index([expirationDate], map: "idx_agreements_expiration")
+  @@index([categoryId], map: "idx_agreements_category")
+  @@index([creatorId], map: "idx_agreements_creator")
+  @@map("agreements")
 }
 
-enum Role {
-  OWNER
-  ADMIN
-  MEMBER
-  VIEWER
+model AgreementParty {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agreementId     String    @map("agreement_id") @db.Uuid
+  partyType       String    @default("COUNTERPARTY") @map("party_type") @db.VarChar(50)
+  name            String    @db.VarChar(255)
+  companyName     String?   @map("company_name") @db.VarChar(255)
+  email           String    @db.VarChar(255)
+  phone           String?   @db.VarChar(50)
+  role            String    @default("SIGNER") @db.VarChar(50)
+  signingSequence Int       @default(1) @map("signing_sequence")
+  status          String    @default("PENDING") @db.VarChar(50)
+  signedAt        DateTime? @map("signed_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+
+  @@index([agreementId], map: "idx_agreement_parties_agreement")
+  @@index([email], map: "idx_agreement_parties_email")
+  @@map("agreement_parties")
 }
 
-enum AgreementStatus {
-  DRAFT
-  PENDING_REVIEW
-  SENT
-  AWAITING_SIGNATURES
-  PARTIALLY_SIGNED
-  COMPLETED
-  REJECTED
-  CANCELLED
-  EXPIRED
+model AgreementClause {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agreementId      String   @map("agreement_id") @db.Uuid
+  sectionNumber    String   @map("section_number") @db.VarChar(20)
+  title            String   @db.VarChar(300)
+  content          String   @db.Text
+  isStandardClause Boolean  @default(true) @map("is_standard_clause")
+  isMandatory      Boolean  @default(true) @map("is_mandatory")
+  displayOrder     Int      @map("display_order")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+
+  @@index([agreementId, displayOrder], map: "idx_clauses_agreement_order")
+  @@map("agreement_clauses")
 }
 
-enum PartyRole {
-  SIGNER
-  REVIEWER
-  VIEWER
+model AgreementPaymentTerm {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agreementId     String   @unique @map("agreement_id") @db.Uuid
+  totalAmount     Decimal? @map("total_amount") @db.Decimal(14, 2)
+  currency        String   @default("USD") @db.VarChar(3)
+  paymentSchedule String   @default("MILESTONE") @map("payment_schedule") @db.VarChar(50)
+  billingNotes    String?  @map("billing_notes") @db.Text
+  milestones      Json     @default("[]")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+
+  @@map("agreement_payment_terms")
 }
 
-enum SignatureType {
-  DRAWN
-  TYPED
-  UPLOADED
+model AuditEvent {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agreementId       String   @map("agreement_id") @db.Uuid
+  eventType         String   @map("event_type") @db.VarChar(100)
+  actorType         String   @map("actor_type") @db.VarChar(50)
+  actorId           String?  @map("actor_id") @db.Uuid
+  actorName         String   @map("actor_name") @db.VarChar(255)
+  actorEmail        String   @map("actor_email") @db.VarChar(255)
+  ipAddress         String?  @map("ip_address") @db.VarChar(45)
+  userAgent         String?  @map("user_agent") @db.Text
+  payload           Json     @default("{}")
+  previousEventHash String   @map("previous_event_hash") @db.VarChar(64)
+  eventHash         String   @map("event_hash") @db.VarChar(64)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+
+  @@index([agreementId, createdAt], map: "idx_audit_events_agreement")
+  @@map("audit_events")
+}
+
+model ActivityLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  action         String   @db.VarChar(100)
+  entityType     String?  @map("entity_type") @db.VarChar(50)
+  entityId       String?  @map("entity_id") @db.Uuid
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  metadata       Json?    @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt(sort: Desc)], map: "idx_activity_logs_org_date")
+  @@map("activity_logs")
 }
 ```
 
@@ -535,14 +653,21 @@ enum SignatureType {
 
 ### 5.1 Migration Execution Strategy
 - All structural schema changes are scripted and versioned via `npx prisma migrate dev --name <migration_name>`.
+- Applied migrations:
+  1. `20261126092610_init`: baseline system settings table.
+  2. `20261127101310_init_auth_and_organizations`: Phase 3 users, profiles, sessions, organizations, members, and invitations.
+  3. `20261127160435_init_agreements_and_analytics`: Phase 4 agreements, categories, counterparties, clauses, payment milestones, chained audit events, and activity logs.
 - Zero manual DDL alterations in production. Deployments execute `npx prisma migrate deploy` in the CI/CD pipeline prior to traffic cutover.
 
 ### 5.2 Development & Demo Seed Fixtures
-The seed script (`server/prisma/seed.ts`) populates:
-1. **Default Organizations:** 1 Demo Agency workspace ("Acme Corp"), 1 Freelance workspace ("Rivera Consulting").
-2. **Standard Agreement Categories:** Non-Disclosure Agreement (NDA), Master Services Agreement (MSA), Statement of Work (SOW), Employment Contract, Partnership Agreement, Independent Contractor Agreement.
-3. **Standard Clause Library:** Boilerplate clauses for Governing Law, Confidentiality, Severability, Intellectual Property Rights, and Termination for Cause.
-4. **Sample Multi-Party Agreements:**
-   - 1 in `DRAFT` state for testing the Creation Wizard.
-   - 1 in `AWAITING_SIGNATURES` state with active guest signing tokens (hashed in DB).
-   - 1 in `COMPLETED` state with valid SHA-256 signatures, chained audit records, and mock PDF documents.
+The seed script (`server/prisma/seed.ts`) includes a strict production guard refusing execution when `NODE_ENV=production`. In development, it deterministically populates:
+1. **Organizations:** 
+   - `Acme Corporation` (primary tenant workspace).
+   - `Globex Corporation` (isolated second tenant for multi-tenancy verification).
+2. **Agreement Categories:** 9 standard categories (NDA, MSA, SOW, SLA, DPA, Employment, Contractor, Partnership, License).
+3. **Agreements Dataset:** 
+   - 62 realistic agreements for Acme Corporation distributed across all 9 statuses (`DRAFT`, `PENDING_REVIEW`, `SENT`, `AWAITING_SIGNATURES`, `PARTIALLY_SIGNED`, `COMPLETED`, `REJECTED`, `CANCELLED`, `EXPIRED`).
+   - 5 isolated agreements for Globex Corporation.
+   - Comprehensive counterparties (`AgreementParty`), legal clauses (`AgreementClause`), and financial payment terms (`AgreementPaymentTerm`).
+4. **Cryptographic Audit Trails:** 220 immutable `AuditEvent` records with monotonic timestamps and SHA-256 hash chaining from genesis block `0`.repeat(64), verified 100% valid.
+5. **Activity Logs:** 25 user and system operational events for live dashboard activity feeds.
