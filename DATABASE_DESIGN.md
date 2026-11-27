@@ -141,12 +141,13 @@ CREATE INDEX idx_org_members_org_role ON organization_members(organization_id, r
 ```
 
 #### Table 5: `user_sessions`
-Active login sessions and hashed refresh tokens for session management and instant revocation.
+Active login sessions and hashed refresh tokens for session management, token-family rotation, and instant revocation.
 ```sql
 CREATE TABLE user_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     refresh_token_hash VARCHAR(64) NOT NULL, -- SHA-256 hash of rolling refresh token
+    family_id UUID DEFAULT gen_random_uuid() NOT NULL, -- Token family identifier for reuse detection
     user_agent TEXT,
     ip_address VARCHAR(45),
     is_revoked BOOLEAN DEFAULT FALSE NOT NULL,
@@ -156,6 +157,27 @@ CREATE TABLE user_sessions (
 );
 CREATE INDEX idx_sessions_user ON user_sessions(user_id);
 CREATE INDEX idx_sessions_refresh_hash ON user_sessions(refresh_token_hash);
+CREATE INDEX idx_sessions_family_id ON user_sessions(family_id);
+```
+
+#### Table 5B: `organization_invitations`
+Pending and historical invitations for inviting collaborators to organizations. All invitation tokens are stored as SHA-256 hashes.
+```sql
+CREATE TABLE organization_invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'MEMBER' NOT NULL, -- OWNER, ADMIN, MEMBER, VIEWER
+    invitation_token_hash VARCHAR(64) NOT NULL, -- SHA-256 hash of secret invitation token
+    invited_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(50) DEFAULT 'PENDING' NOT NULL, -- PENDING, ACCEPTED, REVOKED, EXPIRED
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    accepted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+CREATE INDEX idx_org_invitations_org ON organization_invitations(organization_id);
+CREATE INDEX idx_org_invitations_email ON organization_invitations(email);
+CREATE INDEX idx_org_invitations_token_hash ON organization_invitations(invitation_token_hash);
 ```
 
 ---
