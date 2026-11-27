@@ -33,6 +33,8 @@ import { ActivityChart, CategoryBars, StatusDonut } from '../components/demo/Cha
 import { stats, download, documentText, dateLabel } from '../services/mock';
 import { canManage } from '../domain/lifecycle';
 import { organizationsService } from '../services/organizationsService';
+import { analyticsService } from '../services/analyticsService';
+import { dashboardService } from '../services/dashboardService';
 import { isServiceReal } from '../services/serviceMode';
 import s from './pages.module.css';
 
@@ -52,11 +54,19 @@ export function Supporting({ page }) {
   const [month, setMonth] = useState(10);
   const [year, setYear] = useState(2026);
 
-  // Real organizations state
+  // Real service modes
   const isOrgReal = isServiceReal('organizations');
+  const isAnalyticsReal = isServiceReal('analytics');
+  const isDashboardReal = isServiceReal('dashboard');
+
   const [realMembers, setRealMembers] = useState([]);
   const [realInvitations, setRealInvitations] = useState([]);
   const [loadingTeam, setLoadingTeam] = useState(false);
+
+  const [realAnalytics, setRealAnalytics] = useState(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const [realDeadlines, setRealDeadlines] = useState([]);
+  const [loadingDeadlines, setLoadingDeadlines] = useState(false);
 
   const rows = data.agreements.filter((a) => a.org === data.org && !a.archived);
 
@@ -89,20 +99,67 @@ export function Supporting({ page }) {
     }
   };
 
+  const loadAnalyticsData = async () => {
+    if (!isAnalyticsReal) return;
+    setLoadingAnalytics(true);
+    try {
+      const res = await analyticsService.getOverview({ granularity: 'month' }, data.org);
+      setRealAnalytics(res);
+    } catch (e) {
+      console.warn('Failed to load analytics overview:', e);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  const loadDeadlinesData = async () => {
+    if (!isDashboardReal) return;
+    setLoadingDeadlines(true);
+    try {
+      const res = await dashboardService.getDeadlines(60, data.org);
+      setRealDeadlines(res);
+    } catch (e) {
+      console.warn('Failed to load deadlines:', e);
+    } finally {
+      setLoadingDeadlines(false);
+    }
+  };
+
   useEffect(() => {
     if (page === 'team' && isOrgReal) {
       loadTeamData();
+    } else if (page === 'analytics' && isAnalyticsReal) {
+      loadAnalyticsData();
+    } else if (page === 'deadlines' && isDashboardReal) {
+      loadDeadlinesData();
     }
-  }, [page, isOrgReal, data.org]);
+  }, [page, isOrgReal, isAnalyticsReal, isDashboardReal, data.org]);
 
-  function exportCSV() {
-    download(
-      'agree2met-analytics.csv',
-      `Metric,Value\n${Object.entries(stats(rows))
-        .map(([key, value]) => `${key},${value}`)
-        .join('\n')}`,
-      'text/csv'
-    );
+  async function exportCSV() {
+    if (isAnalyticsReal) {
+      try {
+        const blob = await analyticsService.exportCsv({}, data.org);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `agree2met-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        toast('Analytics exported successfully.');
+      } catch {
+        toast('Failed to export analytics CSV.');
+      }
+    } else {
+      download(
+        'agree2met-analytics.csv',
+        `Metric,Value\n${Object.entries(stats(rows))
+          .map(([key, value]) => `${key},${value}`)
+          .join('\n')}`,
+        'text/csv'
+      );
+    }
   }
 
   async function save(e) {
@@ -516,11 +573,11 @@ export function Supporting({ page }) {
             <>
               <div className={s.grid}>
                 {[
-                  ['Total agreements', metric.total],
-                  ['Completion rate', `${metric.rate}%`],
-                  ['Completed', metric.completed],
-                  ['In progress', metric.running],
-                  ['Expired', metric.expired],
+                  ['Total agreements', isAnalyticsReal && realAnalytics ? realAnalytics.summary.totalCreated : metric.total],
+                  ['Completion rate', isAnalyticsReal && realAnalytics ? `${realAnalytics.summary.completionRate}%` : `${metric.rate}%`],
+                  ['Completed', isAnalyticsReal && realAnalytics ? realAnalytics.summary.totalCompleted : metric.completed],
+                  ['Avg turnaround', isAnalyticsReal && realAnalytics ? `${realAnalytics.turnaroundMetrics.avgTurnaroundHours}h` : '32.5h'],
+                  ['Total value', isAnalyticsReal && realAnalytics ? `$${Number(realAnalytics.summary.totalValue).toLocaleString()}` : `$${(metric.total * 15000).toLocaleString()}`],
                 ].map(([label, value]) => (
                   <section className={s.metric} key={label}>
                     <div className={s.metricTop}>{label}</div>

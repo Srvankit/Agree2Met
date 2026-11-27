@@ -3,7 +3,9 @@
 // and incremental phase-wise real services (VITE_REAL_SERVICES=auth,users,organizations)
 
 const USE_MOCK = import.meta.env?.VITE_USE_MOCK !== 'false';
-const rawRealServices = import.meta.env?.VITE_REAL_SERVICES || 'auth,users,organizations';
+const rawRealServices =
+  import.meta.env?.VITE_REAL_SERVICES ||
+  'auth,users,organizations,dashboard,analytics,agreements,agreements-read';
 const REAL_SERVICES = rawRealServices
   .split(',')
   .map((s: string) => s.trim().toLowerCase())

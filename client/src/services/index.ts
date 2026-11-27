@@ -2,5 +2,8 @@ export * from './api';
 export * from './authService';
 export * from './userService';
 export * from './organizationsService';
+export * from './dashboardService';
+export * from './analyticsService';
+export * from './agreementsService';
 export * from './serviceMode';
 export * from './mock/index';
