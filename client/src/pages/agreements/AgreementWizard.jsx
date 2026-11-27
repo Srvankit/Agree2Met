@@ -145,7 +145,7 @@ export function AgreementWizard() {
       title: tmpl.title,
       categoryId: tmpl.categoryId,
       summary: tmpl.description,
-      clauses: tmpl.defaultClauses.map((c, i) => ({ ...c, order: i })),
+      clauses: (tmpl.defaultClauses || []).map((c, i) => ({ ...c, order: i })),
     }));
     addToast({ title: 'Template Loaded', message: `Prefilled with "${tmpl.title}"`, type: 'info' });
   };
@@ -391,7 +391,7 @@ export function AgreementWizard() {
                     onChange={(val) => handleTemplateSelect(val)}
                     options={[
                       { label: 'Start from scratch (blank)', value: '' },
-                      ...templates.map((t) => ({ label: t.title, value: t.id })),
+                      ...(templates || []).map((t) => ({ label: t.title, value: t.id })),
                     ]}
                   />
                 </Field>
@@ -410,7 +410,7 @@ export function AgreementWizard() {
                     <Select
                       value={formData.categoryId}
                       onChange={(val) => updateForm('categoryId', val)}
-                      options={categories.map((c) => ({ label: c.name, value: c.id }))}
+                      options={(categories || []).map((c) => ({ label: c.name, value: c.id }))}
                     />
                   </Field>
                   <Field label="Total Value (USD)" hint="Optional monetary consideration">

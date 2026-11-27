@@ -5,9 +5,25 @@ const USE_MOCK = import.meta.env?.VITE_USE_MOCK !== 'false';
 
 export const agreementsService = {
   async list(params) {
-    if (USE_MOCK) return mockStore.listAgreements(params);
+    if (USE_MOCK) {
+      const res = await mockStore.listAgreements(params);
+      return {
+        items: Array.isArray(res?.items) ? res.items : [],
+        total: res?.total || 0,
+        page: res?.page || 1,
+        pageSize: res?.pageSize || 10,
+        totalPages: res?.totalPages || 1,
+      };
+    }
     const query = new URLSearchParams(params).toString();
-    return apiClient.get(`/agreements?${query}`);
+    const res = await apiClient.get(`/agreements?${query}`);
+    return {
+      items: Array.isArray(res?.items) ? res.items : [],
+      total: res?.total || 0,
+      page: res?.page || 1,
+      pageSize: res?.pageSize || 10,
+      totalPages: res?.totalPages || 1,
+    };
   },
 
   async getById(id) {
@@ -51,8 +67,12 @@ export const agreementsService = {
   },
 
   async listArchived() {
-    if (USE_MOCK) return mockStore.listArchivedAgreements();
-    return apiClient.get('/agreements/archived');
+    if (USE_MOCK) {
+      const items = await mockStore.listArchivedAgreements();
+      return Array.isArray(items) ? items : [];
+    }
+    const res = await apiClient.get('/agreements/archived');
+    return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
   },
 
   async hardDelete(id) {

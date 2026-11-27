@@ -5,8 +5,12 @@ const USE_MOCK = import.meta.env?.VITE_USE_MOCK !== 'false';
 
 export const organizationsService = {
   async list() {
-    if (USE_MOCK) return mockStore.getOrganizations();
-    return apiClient.get('/organizations');
+    if (USE_MOCK) {
+      const items = await mockStore.getOrganizations();
+      return Array.isArray(items) ? items : [];
+    }
+    const res = await apiClient.get('/organizations');
+    return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
   },
 
   async getCurrent() {
@@ -20,8 +24,12 @@ export const organizationsService = {
   },
 
   async getMembers(orgId) {
-    if (USE_MOCK) return mockStore.getOrgMembers(orgId);
-    return apiClient.get(`/organizations/${orgId}/members`);
+    if (USE_MOCK) {
+      const members = await mockStore.getOrgMembers(orgId);
+      return Array.isArray(members) ? members : [];
+    }
+    const res = await apiClient.get(`/organizations/${orgId}/members`);
+    return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
   },
 
   async inviteMember(data) {

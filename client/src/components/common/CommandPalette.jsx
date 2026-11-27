@@ -139,7 +139,7 @@ export function CommandPalette({ isOpen, onClose }) {
   ];
 
   // Org switcher actions
-  const orgActions = organizations
+  const orgActions = (organizations || [])
     .filter((o) => o.id !== currentOrg?.id)
     .map((org) => ({
       id: `switch-${org.id}`,
@@ -153,12 +153,12 @@ export function CommandPalette({ isOpen, onClose }) {
     }));
 
   // Dynamic agreement search
-  const filteredAgreements = agreements
+  const filteredAgreements = (agreements || [])
     .filter((a) =>
       query.trim() === ''
         ? false
-        : a.title.toLowerCase().includes(query.toLowerCase()) ||
-          a.number.toLowerCase().includes(query.toLowerCase())
+        : a.title?.toLowerCase().includes(query.toLowerCase()) ||
+          a.number?.toLowerCase().includes(query.toLowerCase())
     )
     .slice(0, 6)
     .map((a) => ({

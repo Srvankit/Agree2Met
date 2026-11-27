@@ -12,11 +12,12 @@ export function OrganizationProvider({ children }) {
     try {
       setLoading(true);
       const orgs = await organizationsService.list();
-      setOrganizations(orgs);
+      setOrganizations(Array.isArray(orgs) ? orgs : []);
       const current = await organizationsService.getCurrent();
       setCurrentOrg(current);
     } catch (err) {
       console.error('Failed to load organizations:', err);
+      setOrganizations([]);
     } finally {
       setLoading(false);
     }

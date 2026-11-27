@@ -93,7 +93,7 @@ export function DashboardPage() {
     { label: 'Completed', value: counts.completed || 3, color: '#4338ca' },
   ];
 
-  const categoryBarData = categories.slice(0, 5).map((cat) => ({
+  const categoryBarData = (categories || []).slice(0, 5).map((cat) => ({
     label: cat.name.split(' ')[0],
     value: Math.floor(Math.random() * 5) + 3,
     color: cat.color,
@@ -120,7 +120,7 @@ export function DashboardPage() {
       label: 'Counterparties',
       render: (row) => (
         <AvatarGroup
-          users={row.parties.map((p) => ({ name: p.name }))}
+          users={(row.parties || []).map((p) => ({ name: p.name }))}
           max={3}
           size="sm"
         />
@@ -360,10 +360,10 @@ export function DashboardPage() {
             }
           >
             <div className={styles.deadlinesList}>
-              {upcomingDeadlines.length === 0 ? (
+              {(upcomingDeadlines || []).length === 0 ? (
                 <p className={styles.noDeadlines}>No upcoming deadlines scheduled.</p>
               ) : (
-                upcomingDeadlines.map((agr) => (
+                (upcomingDeadlines || []).map((agr) => (
                   <div
                     key={agr.id}
                     className={styles.deadlineItem}

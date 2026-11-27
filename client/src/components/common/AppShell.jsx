@@ -152,7 +152,7 @@ export function AppShell() {
                 </button>
               }
               items={[
-                ...organizations.map((org) => ({
+                ...(organizations || []).map((org) => ({
                   id: org.id,
                   label: `${org.name} (${org.plan})`,
                   icon: Users,
@@ -348,7 +348,7 @@ export function AppShell() {
                   </button>
                 }
                 items={[
-                  ...notifications.slice(0, 4).map((n) => ({
+                  ...(notifications || []).slice(0, 4).map((n) => ({
                     id: n.id,
                     label: n.title,
                     icon: Bell,

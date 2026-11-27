@@ -7,7 +7,7 @@ export function RoleGuard({ allowedRoles = [], children, fallback = null }) {
   if (!user) return fallback;
 
   const userRole = (user.role || 'VIEWER').toUpperCase();
-  const normalizedAllowed = allowedRoles.map((r) => r.toUpperCase());
+  const normalizedAllowed = (allowedRoles || []).map((r) => r.toUpperCase());
 
   if (userRole === 'OWNER' || normalizedAllowed.includes(userRole)) {
     return children;

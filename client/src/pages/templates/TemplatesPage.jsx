@@ -160,7 +160,7 @@ export function TemplatesPage() {
           >
             All Categories
           </button>
-          {categories.map((cat) => (
+          {(categories || []).map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -304,7 +304,7 @@ export function TemplatesPage() {
               id="template-category"
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              options={(categories || []).map((c) => ({ value: c.id, label: c.name }))}
             />
           </div>
           <div>

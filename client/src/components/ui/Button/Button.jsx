@@ -1,6 +1,15 @@
-import { forwardRef } from 'react';
+import { forwardRef, isValidElement } from 'react';
 import { Loader2 } from 'lucide-react';
 import styles from './Button.module.css';
+
+function renderIcon(iconProp, defaultSize) {
+  if (!iconProp) return null;
+  if (isValidElement(iconProp)) {
+    return iconProp;
+  }
+  const IconComponent = iconProp;
+  return <IconComponent className={styles.icon} aria-hidden="true" size={defaultSize} />;
+}
 
 export const Button = forwardRef(function Button(
   {
@@ -8,8 +17,11 @@ export const Button = forwardRef(function Button(
     variant = 'primary', // 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
     size = 'md', // 'sm' | 'md' | 'lg'
     isLoading = false,
+    loading = false,
     disabled = false,
-    icon: Icon = null,
+    icon = null,
+    leftIcon = null,
+    rightIcon = null,
     iconPosition = 'left',
     type = 'button',
     className = '',
@@ -18,7 +30,12 @@ export const Button = forwardRef(function Button(
   },
   ref,
 ) {
-  const isDisabled = disabled || isLoading;
+  const actualLoading = isLoading || loading;
+  const isDisabled = disabled || actualLoading;
+  const defaultIconSize = size === 'sm' ? 14 : size === 'lg' ? 18 : 16;
+
+  const resolvedLeftIcon = leftIcon || (iconPosition === 'left' ? icon : null);
+  const resolvedRightIcon = rightIcon || (iconPosition === 'right' ? icon : null);
 
   return (
     <button
@@ -26,20 +43,18 @@ export const Button = forwardRef(function Button(
       type={type}
       disabled={isDisabled}
       onClick={isDisabled ? undefined : onClick}
-      className={`${styles.button} ${styles[variant]} ${styles[size]} ${className}`}
+      className={`${styles.button} ${styles[variant] || ''} ${styles[size] || ''} ${className}`}
       {...props}
     >
-      {isLoading ? (
+      {actualLoading ? (
         <Loader2 className={`${styles.spinner} ${styles.icon}`} aria-hidden="true" />
-      ) : Icon && iconPosition === 'left' ? (
-        <Icon className={styles.icon} aria-hidden="true" size={size === 'sm' ? 14 : size === 'lg' ? 18 : 16} />
-      ) : null}
+      ) : (
+        renderIcon(resolvedLeftIcon, defaultIconSize)
+      )}
 
-      <span className={styles.label}>{children}</span>
+      {children !== undefined && children !== null && <span className={styles.label}>{children}</span>}
 
-      {!isLoading && Icon && iconPosition === 'right' ? (
-        <Icon className={styles.icon} aria-hidden="true" size={size === 'sm' ? 14 : size === 'lg' ? 18 : 16} />
-      ) : null}
+      {!actualLoading && renderIcon(resolvedRightIcon, defaultIconSize)}
     </button>
   );
 });

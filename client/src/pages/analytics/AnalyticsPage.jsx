@@ -99,7 +99,7 @@ export function AnalyticsPage() {
       counts[a.categoryId] = (counts[a.categoryId] || 0) + 1;
     });
 
-    return categories.slice(0, 6).map((c) => ({
+    return (categories || []).slice(0, 6).map((c) => ({
       label: c.name.length > 14 ? `${c.name.slice(0, 12)}...` : c.name,
       value: counts[c.id] || 0,
     }));
@@ -136,7 +136,7 @@ export function AnalyticsPage() {
       'Parties Count',
     ];
 
-    const rows = agreements.map((a) => {
+    const rows = (agreements || []).map((a) => {
       const cat = categories.find((c) => c.id === a.categoryId)?.name || a.category || '';
       return [
         `"${a.id}"`,

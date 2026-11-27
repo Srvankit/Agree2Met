@@ -242,7 +242,7 @@ export function PublicSigningPage() {
               </p>
 
               <div className={styles.docClauses}>
-                {agreement.clauses.map((clause) => (
+                {(agreement.clauses || []).map((clause) => (
                   <div key={clause.id} className={styles.clauseSection}>
                     <h3 className={styles.clauseTitle}>{clause.title}</h3>
                     <p className={styles.clauseText}>{clause.content}</p>
@@ -262,7 +262,7 @@ export function PublicSigningPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {agreement.paymentMilestones.map((m) => (
+                      {(agreement.paymentMilestones || []).map((m) => (
                         <tr key={m.id}>
                           <td>{m.title}</td>
                           <td>{formatCurrency(m.amount)}</td>
@@ -282,7 +282,7 @@ export function PublicSigningPage() {
                 </p>
 
                 <div className={styles.signersGrid}>
-                  {agreement.parties.map((p) => {
+                  {(agreement.parties || []).map((p) => {
                     const isCurrentSigner = p.email === signerParty?.email;
                     const hasLocalSignature = isCurrentSigner && signatureData;
 

@@ -5,8 +5,12 @@ const USE_MOCK = import.meta.env?.VITE_USE_MOCK !== 'false';
 
 export const notificationsService = {
   async list() {
-    if (USE_MOCK) return mockStore.listNotifications();
-    return apiClient.get('/notifications');
+    if (USE_MOCK) {
+      const items = await mockStore.listNotifications();
+      return Array.isArray(items) ? items : [];
+    }
+    const res = await apiClient.get('/notifications');
+    return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
   },
 
   async markAsRead(id) {

@@ -341,7 +341,7 @@ export function DocumentsPage() {
               id="upload-agr-select"
               value={selectedAgrId}
               onChange={(e) => setSelectedAgrId(e.target.value)}
-              options={agreements.map((a) => ({ value: a.id, label: a.title }))}
+              options={(agreements || []).map((a) => ({ value: a.id, label: a.title }))}
             />
           </div>
           <FileDropzone

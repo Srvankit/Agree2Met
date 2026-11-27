@@ -131,7 +131,7 @@ export function AgreementsPage() {
       label: 'Parties',
       render: (row) => (
         <AvatarGroup
-          users={row.parties.map((p) => ({ name: p.name }))}
+          users={(row.parties || []).map((p) => ({ name: p.name }))}
           max={3}
           size="sm"
         />
@@ -272,7 +272,7 @@ export function AgreementsPage() {
             id: 'category',
             label: 'All Categories',
             value: categoryFilter,
-            options: categories.map((c) => ({ label: c.name, value: c.id })),
+            options: (categories || []).map((c) => ({ label: c.name, value: c.id })),
             onChange: (v) => {
               setCategoryFilter(v);
               setCurrentPage(1);
@@ -384,7 +384,7 @@ export function AgreementsPage() {
                   <strong className={styles.cardMetaValue}>{formatCurrency(agr.value)}</strong>
                 </div>
                 <AvatarGroup
-                  users={agr.parties.map((p) => ({ name: p.name }))}
+                  users={(agr.parties || []).map((p) => ({ name: p.name }))}
                   max={2}
                   size="sm"
                 />

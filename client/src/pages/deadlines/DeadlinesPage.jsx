@@ -400,7 +400,7 @@ export function DeadlinesPage() {
               id="reminder-agr-select"
               value={targetAgrId}
               onChange={(e) => setTargetAgrId(e.target.value)}
-              options={agreements.map((a) => ({ value: a.id, label: a.title }))}
+              options={(agreements || []).map((a) => ({ value: a.id, label: a.title }))}
             />
           </div>
           <div>

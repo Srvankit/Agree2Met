@@ -215,7 +215,7 @@ export function AgreementDetailPage() {
 
         {/* Action Controls & Transitions */}
         <div className={styles.headerRight}>
-          {availableNextStatuses.map((nextStatus) => {
+          {(availableNextStatuses || []).map((nextStatus) => {
             const meta = STATUS_META[nextStatus];
             const isDanger = ['cancelled', 'terminated', 'disputed'].includes(nextStatus);
             return (
@@ -240,7 +240,7 @@ export function AgreementDetailPage() {
           <Button
             variant="ghost"
             leftIcon={Share2}
-            onClick={() => handleCopyLink(agreement.parties[0]?.token || 'tok_demo')}
+            onClick={() => handleCopyLink(agreement.parties?.[0]?.token || 'tok_demo')}
           >
             Share Link
           </Button>
@@ -252,11 +252,11 @@ export function AgreementDetailPage() {
         tabs={[
           { id: 'overview', label: 'Overview', icon: Info },
           { id: 'document', label: 'Document Paper', icon: FileText },
-          { id: 'parties', label: `Parties (${agreement.parties.length})`, icon: Users },
+          { id: 'parties', label: `Parties (${agreement.parties?.length || 0})`, icon: Users },
           { id: 'audit', label: 'Audit Trail & Crypto', icon: ShieldCheck },
           { id: 'versions', label: `Versions (${agreement.versions?.length || 1})`, icon: History },
           { id: 'files', label: 'Files', icon: Paperclip },
-          { id: 'comments', label: `Notes (${comments.length})`, icon: MessageSquare },
+          { id: 'comments', label: `Notes (${comments?.length || 0})`, icon: MessageSquare },
         ]}
         activeTab={activeTab}
         onChange={setActiveTab}
@@ -272,7 +272,7 @@ export function AgreementDetailPage() {
                 <KeyValue label="Commercial Consideration" value={formatCurrency(agreement.value)} />
                 <KeyValue label="Effective Date" value={agreement.effectiveDate} />
                 <KeyValue label="Expiration Term" value={agreement.expirationDate || 'Open-ended'} />
-                <KeyValue label="Total Signatures Required" value={`${signedPartiesCount} of ${agreement.parties.length} completed`} />
+                <KeyValue label="Total Signatures Required" value={`${signedPartiesCount} of ${agreement.parties?.length || 0} completed`} />
                 <KeyValue label="Organization Workspace" value={currentOrg?.name || 'Acme Global'} />
               </div>
 
@@ -288,7 +288,7 @@ export function AgreementDetailPage() {
               <ProgressBar
                 value={signingProgress}
                 max={100}
-                label={`Signatures Executed (${signedPartiesCount}/${agreement.parties.length})`}
+                label={`Signatures Executed (${signedPartiesCount}/${agreement.parties?.length || 0})`}
               />
             </Card>
 
@@ -296,7 +296,7 @@ export function AgreementDetailPage() {
             {agreement.paymentMilestones?.length > 0 && (
               <Card title="Payment & Deliverable Milestones">
                 <div className={styles.milestonesTable}>
-                  {agreement.paymentMilestones.map((m) => (
+                  {(agreement.paymentMilestones || []).map((m) => (
                     <div key={m.id} className={styles.milestoneRow}>
                       <div>
                         <strong>{m.title}</strong>
@@ -318,7 +318,7 @@ export function AgreementDetailPage() {
           <div className={styles.colSidebar}>
             <Card title="Counterparties Status">
               <div className={styles.partiesSummaryList}>
-                {agreement.parties.map((p) => {
+                {(agreement.parties || []).map((p) => {
                   const isSigned = p.status === 'signed';
                   return (
                     <div key={p.id} className={styles.partySummaryItem}>
@@ -412,7 +412,7 @@ export function AgreementDetailPage() {
             </p>
 
             <div className={styles.paperClausesBlock}>
-              {agreement.clauses.map((clause) => (
+              {(agreement.clauses || []).map((clause) => (
                 <div key={clause.id} className={styles.clauseItem}>
                   <h3 className={styles.clauseHeading}>{clause.title}</h3>
                   <p className={styles.clauseContent}>{clause.content}</p>
@@ -428,7 +428,7 @@ export function AgreementDetailPage() {
               </p>
 
               <div className={styles.signersGrid}>
-                {agreement.parties.map((p) => (
+                {(agreement.parties || []).map((p) => (
                   <div key={p.id} className={styles.signatureBox}>
                     <span className={styles.signRole}>{p.role.toUpperCase()}</span>
                     <div className={styles.signatureSlot}>
@@ -464,7 +464,7 @@ export function AgreementDetailPage() {
       {activeTab === 'parties' && (
         <Card title="Agreement Parties & Verification Records">
           <div className={styles.partiesFullList}>
-            {agreement.parties.map((party, idx) => {
+            {(agreement.parties || []).map((party, idx) => {
               const isSigned = party.status === 'signed';
               return (
                 <div key={party.id || idx} className={styles.partyCardFull}>
@@ -698,7 +698,7 @@ export function AgreementDetailPage() {
       {activeTab === 'comments' && (
         <Card title="Internal Legal & Deal Notes">
           <div className={styles.commentsList}>
-            {comments.map((c) => (
+            {(comments || []).map((c) => (
               <div key={c.id} className={styles.commentItem}>
                 <Avatar name={c.author} size="sm" />
                 <div className={styles.commentBody}>

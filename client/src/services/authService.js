@@ -20,7 +20,7 @@ export const authService = {
   },
 
   async logout() {
-    if (USE_MOCK) return { success: true };
+    if (USE_MOCK) return mockStore.logout();
     return apiClient.post('/auth/logout');
   },
 

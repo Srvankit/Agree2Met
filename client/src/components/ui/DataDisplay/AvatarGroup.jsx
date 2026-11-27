@@ -7,8 +7,9 @@ export function AvatarGroup({
   size = 'md',
   className = '',
 }) {
-  const visible = users.slice(0, max);
-  const remaining = users.length - max;
+  const safeUsers = Array.isArray(users) ? users : [];
+  const visible = safeUsers.slice(0, max);
+  const remaining = safeUsers.length - max;
 
   return (
     <div className={`${styles.group} ${className}`}>

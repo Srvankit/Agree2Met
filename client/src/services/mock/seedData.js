@@ -980,6 +980,7 @@ export const INITIAL_AGREEMENTS = rawAgreements.map((item, idx) => {
       },
     ],
     auditTrail,
+    comments: [],
   };
 });
 

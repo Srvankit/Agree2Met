@@ -11,9 +11,10 @@ export function NotificationProvider({ children }) {
     try {
       setLoading(true);
       const items = await notificationsService.list();
-      setNotifications(items);
+      setNotifications(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }

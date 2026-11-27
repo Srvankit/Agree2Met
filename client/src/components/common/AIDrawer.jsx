@@ -154,7 +154,7 @@ export function AIDrawer() {
                 <p className="document-body">{result.data.content}</p>
               ) : (
                 <div className={styles.risksList}>
-                  {result.data.findings.map((f, i) => (
+                  {(result.data.findings || []).map((f, i) => (
                     <div key={i} className={styles.riskItem}>
                       <div className={styles.riskItemHeader}>
                         <span className={`${styles.riskBadge} ${styles[f.level]}`}>

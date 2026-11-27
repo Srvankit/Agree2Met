@@ -5,8 +5,12 @@ const USE_MOCK = import.meta.env?.VITE_USE_MOCK !== 'false';
 
 export const remindersService = {
   async list() {
-    if (USE_MOCK) return mockStore.listReminders();
-    return apiClient.get('/reminders');
+    if (USE_MOCK) {
+      const items = await mockStore.listReminders();
+      return Array.isArray(items) ? items : [];
+    }
+    const res = await apiClient.get('/reminders');
+    return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
   },
 
   async create(data) {

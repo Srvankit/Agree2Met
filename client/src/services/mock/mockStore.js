@@ -13,9 +13,13 @@ import {
 } from './cryptoChain';
 import { isValidTransition } from '../../domain/agreementLifecycle';
 
-const STORAGE_KEY = 'agree2met_mock_db_v2';
+export const MOCK_STORE_VERSION = 3;
+const STORAGE_KEY = 'agree2met_mock_db_v3';
 
 export const simulateLatency = (min = 200, max = 500) => {
+  if (import.meta.env?.MODE === 'test') {
+    return Promise.resolve();
+  }
   const ms = Math.floor(Math.random() * (max - min + 1)) + min;
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -25,26 +29,68 @@ class MockStore {
     this.state = this.loadState();
   }
 
+  normalizeAgreement(a) {
+    if (!a) return a;
+    return {
+      ...a,
+      parties: Array.isArray(a.parties) ? a.parties : [],
+      clauses: Array.isArray(a.clauses) ? a.clauses : [],
+      paymentMilestones: Array.isArray(a.paymentMilestones) ? a.paymentMilestones : [],
+      versions: Array.isArray(a.versions) ? a.versions : [],
+      documents: Array.isArray(a.documents) ? a.documents : [],
+      auditTrail: Array.isArray(a.auditTrail) ? a.auditTrail : [],
+      comments: Array.isArray(a.comments) ? a.comments : [],
+    };
+  }
+
   loadState() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
+      // Clean up outdated legacy storage keys
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('agree2met_mock_db');
+        localStorage.removeItem('agree2met_mock_db_v2');
+
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (
+            parsed &&
+            parsed._version === MOCK_STORE_VERSION &&
+            Array.isArray(parsed.agreements) &&
+            Array.isArray(parsed.organizations) &&
+            Array.isArray(parsed.categories) &&
+            Array.isArray(parsed.templates) &&
+            Array.isArray(parsed.notifications) &&
+            Array.isArray(parsed.reminders)
+          ) {
+            parsed.agreements = parsed.agreements.map((a) => this.normalizeAgreement(a));
+            return parsed;
+          }
+          console.warn(
+            `[MockStore] Incompatible or outdated store version (${parsed?._version}). Reseeding with fresh v${MOCK_STORE_VERSION} dataset.`
+          );
+        }
       }
     } catch (e) {
       console.warn('Could not load mock store from localStorage, using seed data:', e);
     }
-    return this.getInitialState();
+    const fresh = this.getInitialState();
+    this.saveState(fresh);
+    return fresh;
   }
 
   getInitialState() {
     return {
+      _version: MOCK_STORE_VERSION,
       user: { ...CURRENT_USER },
       organizations: JSON.parse(JSON.stringify(ORGANIZATIONS)),
       currentOrgId: 'org-acme',
       categories: [...CATEGORIES],
-      templates: JSON.parse(JSON.stringify(TEMPLATES)),
-      agreements: JSON.parse(JSON.stringify(INITIAL_AGREEMENTS)),
+      templates: JSON.parse(JSON.stringify(TEMPLATES)).map((t) => ({
+        ...t,
+        defaultClauses: Array.isArray(t.defaultClauses) ? t.defaultClauses : [],
+      })),
+      agreements: JSON.parse(JSON.stringify(INITIAL_AGREEMENTS)).map((a) => this.normalizeAgreement(a)),
       archivedAgreements: [],
       notifications: JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS)),
       reminders: JSON.parse(JSON.stringify(INITIAL_REMINDERS)),
@@ -52,8 +98,14 @@ class MockStore {
   }
 
   save() {
+    this.saveState(this.state);
+  }
+
+  saveState(stateToSave) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+      }
     } catch (e) {
       console.error('Failed to save mock state to localStorage:', e);
     }
@@ -210,7 +262,7 @@ class MockStore {
     const items = list.slice(startIndex, startIndex + pageSize);
 
     return {
-      items,
+      items: items.map((a) => this.normalizeAgreement(a)),
       total,
       page,
       pageSize,
@@ -222,7 +274,7 @@ class MockStore {
     await simulateLatency();
     const agr = this.state.agreements.find((a) => a.id === id);
     if (!agr) throw new Error(`Agreement ${id} not found`);
-    return JSON.parse(JSON.stringify(agr));
+    return this.normalizeAgreement(JSON.parse(JSON.stringify(agr)));
   }
 
   async createAgreement(data) {
@@ -422,7 +474,7 @@ class MockStore {
       const party = agr.parties.find((p) => p.token === token);
       if (party) {
         return {
-          agreement: { ...agr },
+          agreement: this.normalizeAgreement({ ...agr }),
           party: { ...party },
         };
       }
@@ -431,7 +483,7 @@ class MockStore {
     if (token.startsWith('tok_') && this.state.agreements.length > 0) {
       const sample = this.state.agreements[12] || this.state.agreements[0];
       return {
-        agreement: { ...sample },
+        agreement: this.normalizeAgreement({ ...sample }),
         party: sample.parties[1] || sample.parties[0],
       };
     }
@@ -606,8 +658,8 @@ class MockStore {
     return {
       counts,
       activeTotalValue,
-      upcomingDeadlines,
-      recentAgreements,
+      upcomingDeadlines: (upcomingDeadlines || []).map((a) => this.normalizeAgreement(a)),
+      recentAgreements: (recentAgreements || []).map((a) => this.normalizeAgreement(a)),
     };
   }
 

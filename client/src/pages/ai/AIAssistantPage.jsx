@@ -64,7 +64,7 @@ export function AIAssistantPage() {
   const [loadingAgreements, setLoadingAgreements] = useState(false);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -437,7 +437,7 @@ export function AIAssistantPage() {
                 id="risk-target-agr"
                 value={selectedAgrId}
                 onChange={(e) => setSelectedAgrId(e.target.value)}
-                options={agreements.map((a) => ({
+                options={(agreements || []).map((a) => ({
                   value: a.id,
                   label: `${a.title} (${a.status.replace('_', ' ')})`,
                 }))}
@@ -473,7 +473,7 @@ export function AIAssistantPage() {
               </div>
 
               <div className={styles.riskFindingsList}>
-                {riskAnalysis.findings.map((finding) => (
+                {(riskAnalysis.findings || []).map((finding) => (
                   <div key={finding.title} className={styles.findingItem}>
                     <div className={styles.findingHeader}>
                       <span className={styles.findingTitle}>{finding.title}</span>

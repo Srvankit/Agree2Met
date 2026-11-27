@@ -16,6 +16,8 @@ export function Table({
   emptyText = 'No records found',
   className = '',
 }) {
+  const safeColumns = Array.isArray(columns) ? columns : [];
+  const safeData = Array.isArray(data) ? data : [];
   const [sortField, setSortField] = useState(defaultSortField);
   const [sortDir, setSortDir] = useState(defaultSortDir);
 
@@ -33,7 +35,7 @@ export function Table({
   const handleSelectAll = (checked) => {
     if (!onSelectionChange) return;
     if (checked) {
-      const allKeys = data.map((item) => item[keyField]);
+      const allKeys = safeData.map((item) => item[keyField]);
       onSelectionChange(allKeys);
     } else {
       onSelectionChange([]);
@@ -49,7 +51,7 @@ export function Table({
     }
   };
 
-  const isAllSelected = data.length > 0 && selectedKeys.length === data.length;
+  const isAllSelected = safeData.length > 0 && selectedKeys.length === safeData.length;
 
   return (
     <div className={`${styles.tableWrapper} ${className}`}>
@@ -65,7 +67,7 @@ export function Table({
                 />
               </th>
             )}
-            {columns.map((col) => {
+            {safeColumns.map((col) => {
               const isCurrentSort = sortField === col.key;
               return (
                 <th
@@ -95,14 +97,14 @@ export function Table({
           </tr>
         </thead>
         <tbody>
-          {data.length === 0 ? (
+          {safeData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (selectable ? 1 : 0)} className={styles.emptyCell}>
+              <td colSpan={safeColumns.length + (selectable ? 1 : 0)} className={styles.emptyCell}>
                 {emptyText}
               </td>
             </tr>
           ) : (
-            data.map((row, rowIdx) => {
+            safeData.map((row, rowIdx) => {
               const rowKey = row[keyField] ?? rowIdx;
               const isSelected = selectedKeys.includes(rowKey);
 
@@ -120,7 +122,7 @@ export function Table({
                       />
                     </td>
                   )}
-                  {columns.map((col) => (
+                  {safeColumns.map((col) => (
                     <td key={col.key} className={styles.td} data-label={col.header}>
                       {col.render ? col.render(row[col.key], row, rowIdx) : row[col.key]}
                     </td>
