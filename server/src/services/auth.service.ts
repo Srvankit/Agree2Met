@@ -19,6 +19,7 @@ import {
   ResetPasswordInput,
 } from '../validators/auth.validator.js';
 import { enqueueTransactionalEmail } from '../queues/index.js';
+import { loginLockoutService } from './lockout.service.js';
 
 export class AuthService {
   /**
@@ -127,6 +128,18 @@ export class AuthService {
     requestId?: string
   ) {
     const email = input.email.toLowerCase().trim();
+    const effectiveIp = (ipAddress || '127.0.0.1').trim();
+
+    // 1. Check if (IP + email) pair or IP is currently locked
+    const lockoutStatus = await loginLockoutService.isLocked(effectiveIp, email);
+    if (lockoutStatus.locked) {
+      logger.warn({ email, ipAddress: effectiveIp, requestId }, 'Login blocked: IP/email lockout active');
+      const err = new Error('Too many login attempts. Please try again later.');
+      (err as any).code = 'TOO_MANY_ATTEMPTS';
+      (err as any).statusCode = 429;
+      (err as any).retryAfter = lockoutStatus.retryAfter || 900;
+      throw err;
+    }
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -135,46 +148,14 @@ export class AuthService {
 
     if (!user || !user.passwordHash) {
       await dummyPasswordVerify();
-      logger.warn({ email, ipAddress, requestId }, 'Login failed: Unknown user');
-      const err = new Error('Invalid email or password.');
-      (err as any).code = 'INVALID_CREDENTIALS';
-      (err as any).statusCode = 401;
-      throw err;
-    }
+      const failRecord = await loginLockoutService.recordFailedAttempt(effectiveIp, email);
+      logger.warn({ email, ipAddress: effectiveIp, requestId }, 'Login failed: Unknown user');
 
-    // Check account lockout
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
-      logger.warn({ userId: user.id, email, ipAddress, requestId }, 'Login blocked: Account temporarily locked');
-      const err = new Error('Account is temporarily locked due to multiple failed login attempts. Please try again later.');
-      (err as any).code = 'ACCOUNT_LOCKED';
-      (err as any).statusCode = 423;
-      throw err;
-    }
-
-    const isValidPassword = await verifyPassword(user.passwordHash, input.password);
-
-    if (!isValidPassword) {
-      const failedAttempts = user.failedLoginAttempts + 1;
-      let lockedUntil: Date | null = null;
-
-      if (failedAttempts >= 5) {
-        lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes lockout
-      }
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          failedLoginAttempts: failedAttempts,
-          lockedUntil,
-        },
-      });
-
-      logger.warn({ userId: user.id, email, failedAttempts, ipAddress, requestId }, 'Login failed: Incorrect password');
-
-      if (lockedUntil) {
-        const err = new Error('Account is temporarily locked due to multiple failed login attempts. Please try again later.');
-        (err as any).code = 'ACCOUNT_LOCKED';
-        (err as any).statusCode = 423;
+      if (failRecord.locked) {
+        const err = new Error('Too many login attempts. Please try again later.');
+        (err as any).code = 'TOO_MANY_ATTEMPTS';
+        (err as any).statusCode = 429;
+        (err as any).retryAfter = failRecord.retryAfter || 900;
         throw err;
       }
 
@@ -183,6 +164,29 @@ export class AuthService {
       (err as any).statusCode = 401;
       throw err;
     }
+
+    const isValidPassword = await verifyPassword(user.passwordHash, input.password);
+
+    if (!isValidPassword) {
+      const failRecord = await loginLockoutService.recordFailedAttempt(effectiveIp, email);
+      logger.warn({ userId: user.id, email, ipAddress: effectiveIp, requestId }, 'Login failed: Incorrect password');
+
+      if (failRecord.locked) {
+        const err = new Error('Too many login attempts. Please try again later.');
+        (err as any).code = 'TOO_MANY_ATTEMPTS';
+        (err as any).statusCode = 429;
+        (err as any).retryAfter = failRecord.retryAfter || 900;
+        throw err;
+      }
+
+      const err = new Error('Invalid email or password.');
+      (err as any).code = 'INVALID_CREDENTIALS';
+      (err as any).statusCode = 401;
+      throw err;
+    }
+
+    // Reset failed attempt counts upon valid credentials
+    await loginLockoutService.resetAttempts(effectiveIp, email);
 
     // Check email verification
     if (!user.isEmailVerified) {

@@ -29,7 +29,7 @@ describe('CSRF Protection Middleware', () => {
     csrfMiddleware(req, res, next);
     expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError));
     const error = next.mock.calls[0][0];
-    expect(error.message).toContain('Missing required X-Requested-With or X-CSRF-Token header');
+    expect(error.message).toContain('Missing required X-Requested-With');
   });
 
   it('allows mutating POST request with X-Requested-With: XMLHttpRequest', () => {

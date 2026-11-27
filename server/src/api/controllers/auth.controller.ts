@@ -58,6 +58,9 @@ export class AuthController {
 
       sendSuccess(res, { user: result.user }, 'Login successful.');
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;
@@ -121,6 +124,9 @@ export class AuthController {
       const result = await authService.verifyEmail(parsed.data.token, requestId);
       sendSuccess(res, result, result.message);
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;
@@ -141,6 +147,9 @@ export class AuthController {
       const result = await authService.resendVerification(parsed.data.email, requestId);
       sendSuccess(res, result, result.message);
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;
@@ -161,6 +170,9 @@ export class AuthController {
       const result = await authService.forgotPassword(parsed.data.email, requestId);
       sendSuccess(res, result, result.message);
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;
@@ -187,6 +199,9 @@ export class AuthController {
       const result = await authService.resetPassword(parsed.data, requestId);
       sendSuccess(res, result, result.message);
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;
@@ -204,6 +219,9 @@ export class AuthController {
       const data = await authService.getMe(req.user.id);
       sendSuccess(res, data, 'User profile retrieved successfully.');
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;
@@ -221,6 +239,9 @@ export class AuthController {
       const sessions = await authService.getSessions(req.user.id, req.session.id);
       sendSuccess(res, { sessions }, 'Active sessions retrieved successfully.');
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;
@@ -240,6 +261,9 @@ export class AuthController {
       const result = await authService.revokeSession(req.user.id, sessionId, requestId);
       sendSuccess(res, result, result.message);
     } catch (error: any) {
+      if (error.retryAfter) {
+        res.setHeader('Retry-After', String(error.retryAfter));
+      }
       if (error.code && error.statusCode) {
         sendError(res, error.code, error.message, error.statusCode);
         return;

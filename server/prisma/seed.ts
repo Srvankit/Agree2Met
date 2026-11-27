@@ -1,12 +1,20 @@
+/**
+ * Agree2Met Database Seed Script
+ *
+ * SAFETY WARNING: DEV-ONLY SEED SCRIPT
+ * This script seeds deterministic development credentials (e.g. alex@agree2met.com / Demo@1234).
+ * It MUST NOT and WILL NOT run in production environments (NODE_ENV=production).
+ */
+
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
-async function main() {
+export async function main() {
   if (process.env.NODE_ENV === 'production') {
-    console.log('Skipping dev seed in production environment.');
-    return;
+    console.error('CRITICAL: Dev seed script refuses to run when NODE_ENV=production.');
+    throw new Error('Seed script cannot be executed in production environment (NODE_ENV=production).');
   }
 
   console.log('Seeding Phase 3 development user and organization...');

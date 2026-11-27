@@ -437,7 +437,7 @@ All API responses follow a uniform JSON envelope:
 - **Validation:** Verifies current password, enforces min 10 characters and blacklist on new password.
 
 #### `POST /api/v1/users/export-data`
-- **Access Control:** Authenticated (GDPR Data Portability)
+- **Access Control:** Authenticated (Account Data Export)
 - **Response Body (200 OK):** JSON containing user profile, session history, organization memberships, and active agreement references.
 
 #### `DELETE /api/v1/users/account`

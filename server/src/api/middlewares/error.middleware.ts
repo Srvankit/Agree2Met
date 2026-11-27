@@ -35,6 +35,12 @@ export function errorHandlerMiddleware(
     return;
   }
 
+  // Handle Multer upload limits (e.g. file size exceeded)
+  if ((err as any).name === 'MulterError' || (err as any).code === 'LIMIT_FILE_SIZE') {
+    sendError(res, 'FILE_TOO_LARGE', 'Uploaded file exceeds the maximum allowed size of 2MB.', 400);
+    return;
+  }
+
   // Unhandled / Generic server errors
   logger.error({ err, reqId: req.id, url: req.url }, 'Unhandled server exception');
   sendError(
