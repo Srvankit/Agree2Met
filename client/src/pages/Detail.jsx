@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Share2,
   Download,
@@ -11,6 +12,10 @@ import {
   Copy,
   FileText,
   Clock3,
+  PenLine,
+  X,
+  History,
+  Diff,
 } from 'lucide-react';
 import { useWorkspace } from '../context/Workspace';
 import {
@@ -38,6 +43,7 @@ import s from './pages.module.css';
 export function Detail({ id }) {
   const { data, editAgreement, toast } = useWorkspace();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isReal = isServiceReal('agreements') || isServiceReal('agreements-read');
 
   const [tab, setTab] = useState('Overview');
@@ -45,7 +51,7 @@ export function Detail({ id }) {
   const [invite, setInvite] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [ver1, setVer1] = useState('0');
+  const [ver1, setVer1] = useState('1');
   const [ver2, setVer2] = useState('1');
   const [reminder, setReminder] = useState('');
   const [verify, setVerify] = useState('');
@@ -54,6 +60,9 @@ export function Detail({ id }) {
 
   // Real backend detail state
   const [realAgreement, setRealAgreement] = useState(null);
+  const [realVersions, setRealVersions] = useState([]);
+  const [v1Detail, setV1Detail] = useState(null);
+  const [v2Detail, setV2Detail] = useState(null);
   const [loading, setLoading] = useState(isReal);
   const [error, setError] = useState(null);
 
@@ -62,8 +71,18 @@ export function Detail({ id }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await agreementsService.getAgreementById(id, data.org);
+      const [res, versionsList] = await Promise.all([
+        agreementsService.getAgreementById(id, data.org),
+        agreementsService.getVersions(id, data.org).catch(() => []),
+      ]);
       setRealAgreement(res);
+      setRealVersions(versionsList || []);
+      if (versionsList && versionsList.length > 0) {
+        const latestNum = versionsList[0].versionNumber;
+        const prevNum = versionsList.length > 1 ? versionsList[1].versionNumber : latestNum;
+        setVer1(String(prevNum));
+        setVer2(String(latestNum));
+      }
     } catch (err) {
       console.warn('Failed to load agreement detail:', err);
       setError(err.message || 'Agreement not found or access denied.');
@@ -76,6 +95,32 @@ export function Detail({ id }) {
     setOrigin(window.location.origin);
     loadRealDetail();
   }, [loadRealDetail]);
+
+  // Load version details when version selections change in real mode
+  useEffect(() => {
+    if (!isReal || !id || !realVersions.length) return;
+    let active = true;
+
+    async function loadVersionDetails() {
+      try {
+        const [d1, d2] = await Promise.all([
+          agreementsService.getVersion(id, Number(ver1), data.org).catch(() => null),
+          agreementsService.getVersion(id, Number(ver2), data.org).catch(() => null),
+        ]);
+        if (active) {
+          setV1Detail(d1);
+          setV2Detail(d2);
+        }
+      } catch (err) {
+        console.warn('Failed to load version snapshots:', err);
+      }
+    }
+
+    loadVersionDetails();
+    return () => {
+      active = false;
+    };
+  }, [isReal, id, ver1, ver2, realVersions, data.org]);
 
   const mockAgreement = data.agreements?.find((x) => x.id === id && x.org === data.org);
 
@@ -93,6 +138,7 @@ export function Detail({ id }) {
     a = {
       id: realAgreement.id,
       title: realAgreement.title,
+      referenceNumber: realAgreement.referenceNumber,
       client: realAgreement.parties?.[0]?.companyName || realAgreement.parties?.[0]?.name || 'Counterparty',
       category: realAgreement.category?.name || 'General Agreement',
       status:
@@ -100,14 +146,20 @@ export function Detail({ id }) {
           ? 'Completed'
           : realAgreement.status === 'DRAFT'
             ? 'Draft'
-            : realAgreement.status === 'AWAITING_SIGNATURES'
-              ? 'Awaiting Signatures'
-              : realAgreement.status === 'PARTIALLY_SIGNED'
-                ? 'Partially Signed'
-                : realAgreement.status === 'EXPIRED'
-                  ? 'Expired'
-                  : 'Sent',
-      value: realAgreement.paymentTerms?.totalAmount ? Number(realAgreement.paymentTerms.totalAmount) : 25000,
+            : realAgreement.status === 'PENDING_REVIEW'
+              ? 'Pending Review'
+              : realAgreement.status === 'AWAITING_SIGNATURES'
+                ? 'Awaiting Signatures'
+                : realAgreement.status === 'PARTIALLY_SIGNED'
+                  ? 'Partially Signed'
+                  : realAgreement.status === 'EXPIRED'
+                    ? 'Expired'
+                    : realAgreement.status === 'CANCELLED'
+                      ? 'Cancelled'
+                      : 'Sent',
+      rawStatus: realAgreement.status,
+      rowVersion: realAgreement.rowVersion,
+      value: realAgreement.paymentTerms?.totalAmount ? Number(realAgreement.paymentTerms.totalAmount) : 0,
       deadline: realAgreement.expirationDate ? String(realAgreement.expirationDate).split('T')[0] : '2026-12-31',
       created: String(realAgreement.createdAt).split('T')[0],
       description: realAgreement.description,
@@ -122,6 +174,7 @@ export function Detail({ id }) {
         text: c.content,
       })),
       audit: (realAgreement.auditTrail?.events || []).map((ev) => ({
+        seq: ev.seq,
         action: ev.eventType.replace(/_/g, ' '),
         actor: ev.actorName || ev.actorEmail || 'System',
         date: ev.createdAt,
@@ -131,7 +184,13 @@ export function Detail({ id }) {
       auditVerification: realAgreement.auditTrail?.verification,
       files: [],
       reminders: [],
-      versions: [{ name: 'v1.0 (Baseline)', text: 'Original agreement draft.' }],
+      versions: realVersions.map((v) => ({
+        name: `v${v.versionNumber}.0 (${v.changeSummary || 'Snapshot'})`,
+        text: `Version ${v.versionNumber} committed on ${new Date(v.createdAt).toLocaleDateString()}`,
+        versionNumber: v.versionNumber,
+        createdAt: v.createdAt,
+        author: v.creator?.profile?.displayName || v.creator?.email || 'User',
+      })),
       token: 'real-signing-token',
     };
   }
@@ -152,11 +211,79 @@ export function Detail({ id }) {
   const writable = !isReal && canWrite(data.demoRole);
   const actions = isReal ? [] : validActions(a.status);
 
-  const change = async (next) => {
-    if (isReal) {
-      toast('Agreement status transitions will be available in an upcoming release (Phase 5).');
-      return;
+  // Status transitions
+  const handleRealTransition = async (nextStatus, label) => {
+    setBusy(true);
+    try {
+      await agreementsService.changeStatus(a.id, nextStatus, label, data.org);
+      await queryClient.invalidateQueries({ queryKey: ['agreements'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      toast(label);
+      await loadRealDetail();
+    } catch (err) {
+      toast(err.message || 'Failed to update agreement status');
+    } finally {
+      setBusy(false);
     }
+  };
+
+  const handleDuplicate = async () => {
+    setBusy(true);
+    try {
+      if (isReal) {
+        const copy = await agreementsService.duplicateAgreement(a.id, data.org);
+        await queryClient.invalidateQueries({ queryKey: ['agreements'] });
+        await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+        toast('Agreement duplicated');
+        navigate({ to: '/app/agreements/$id', params: { id: copy.id } });
+      } else {
+        const copy = {
+          ...a,
+          id: `AG-2026-${Date.now()}`,
+          title: `${a.title} (copy)`,
+          status: 'Draft',
+          token: `demo-${Date.now()}`,
+          audit: [],
+          archived: false,
+          parties: a.parties.map((p) => ({ ...p, signed: false })),
+        };
+        data.update((d) => ({ ...d, agreements: [copy, ...d.agreements] }));
+        toast('Agreement duplicated');
+      }
+    } catch (err) {
+      toast('Failed to duplicate agreement');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Delete “${a.title}”? This cannot be undone.`)) return;
+    setBusy(true);
+    try {
+      if (isReal) {
+        await agreementsService.deleteAgreement(a.id, data.org);
+        await queryClient.invalidateQueries({ queryKey: ['agreements'] });
+        await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+        toast('Agreement deleted');
+        navigate({ to: '/app/agreements' });
+      } else {
+        data.update((d) => ({ ...d, agreements: d.agreements.filter((x) => x.id !== a.id) }));
+        toast('Agreement deleted');
+        navigate({ to: '/app/agreements' });
+      }
+    } catch (err) {
+      toast(err.message || 'Failed to delete agreement');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const change = async (next) => {
+    if (isReal) return;
     setBusy(true);
     await editAgreement(a.id, { status: next }, `Status changed to ${next}`);
     setBusy(false);
@@ -164,7 +291,7 @@ export function Detail({ id }) {
 
   async function upload(e) {
     if (isReal) {
-      toast('Document attachments will be available in an upcoming release (Phase 5).');
+      toast('Document attachments will be available in an upcoming release (Phase 7).');
       return;
     }
     const files = Array.from(e.target.files ?? []);
@@ -187,6 +314,63 @@ export function Detail({ id }) {
     e.target.value = '';
   }
 
+  // Compute section diff between v1 and v2 for Versions tab
+  const sectionDiff = useMemo(() => {
+    if (!v1Detail?.content?.clauses && !v2Detail?.content?.clauses) return [];
+    const c1 = v1Detail?.content?.clauses || [];
+    const c2 = v2Detail?.content?.clauses || [];
+
+    const map1 = new Map(c1.map((c) => [c.title, c]));
+    const map2 = new Map(c2.map((c) => [c.title, c]));
+
+    const diffList = [];
+
+    // Check clauses in V2
+    for (const clause2 of c2) {
+      const clause1 = map1.get(clause2.title);
+      if (!clause1) {
+        diffList.push({
+          type: 'ADDED',
+          title: clause2.title,
+          sectionNumber: clause2.sectionNumber,
+          v1Text: null,
+          v2Text: clause2.content,
+        });
+      } else if (clause1.content !== clause2.content) {
+        diffList.push({
+          type: 'MODIFIED',
+          title: clause2.title,
+          sectionNumber: clause2.sectionNumber,
+          v1Text: clause1.content,
+          v2Text: clause2.content,
+        });
+      } else {
+        diffList.push({
+          type: 'UNCHANGED',
+          title: clause2.title,
+          sectionNumber: clause2.sectionNumber,
+          v1Text: clause1.content,
+          v2Text: clause2.content,
+        });
+      }
+    }
+
+    // Check deleted clauses (in V1 but not in V2)
+    for (const clause1 of c1) {
+      if (!map2.has(clause1.title)) {
+        diffList.push({
+          type: 'DELETED',
+          title: clause1.title,
+          sectionNumber: clause1.sectionNumber,
+          v1Text: clause1.content,
+          v2Text: null,
+        });
+      }
+    }
+
+    return diffList;
+  }, [v1Detail, v2Detail]);
+
   return (
     <main className={s.page}>
       <AppLink page="agreements" className={s.textLink}>
@@ -199,28 +383,27 @@ export function Detail({ id }) {
             <Badge status={a.status} />
           </div>
           <p>
-            <span className={s.reference}>{a.referenceNumber || a.id}</span> · {a.category} ·
-            Created {dateLabel(a.created)}
+            <span className={s.reference}>{a.referenceNumber || a.id}</span> · {a.category} · Created{' '}
+            {dateLabel(a.created)}
           </p>
         </div>
         <div className={s.headingActions}>
           <Button icon={Share2} onClick={() => setShare(true)}>
             Share
           </Button>
-          <Button
-            icon={Download}
-            onClick={() => mockDownload(`${a.id}.txt`, documentText(a))}
-          >
+          <Button icon={Download} onClick={() => mockDownload(`${a.id}.txt`, documentText(a))}>
             Download
           </Button>
           <AgreementActions agreement={a} />
         </div>
       </div>
+
       <Tabs
         items={['Overview', 'Document', 'Parties', 'Activity & Audit', 'Versions', 'Files', 'Reminders']}
         value={tab}
         onChange={setTab}
       />
+
       <div className={s.detailContent}>
         {tab === 'Overview' && (
           <>
@@ -240,6 +423,7 @@ export function Detail({ id }) {
                 </p>
               </div>
             </div>
+
             <div className={s.chartGrid}>
               <section className={s.panel}>
                 <div className={s.panelHead}>
@@ -260,22 +444,124 @@ export function Detail({ id }) {
                   ))}
                 </div>
               </section>
+
               <section className={s.panel}>
                 <div className={s.panelHead}>
                   <h2>Next steps</h2>
                 </div>
                 <div className={`${s.panelBody} ${s.stack}`}>
                   {isReal ? (
-                    <p className={s.muted}>
-                      Live agreement state transitions and e-signing workflows will be activated in
-                      an upcoming release (Phase 5).
-                    </p>
+                    <>
+                      {/* DRAFT STATE ACTIONS */}
+                      {a.rawStatus === 'DRAFT' && (
+                        <>
+                          <Button
+                            icon={PenLine}
+                            onClick={() => navigate({ to: '/app/new', search: { edit: a.id } })}
+                          >
+                            Edit agreement
+                          </Button>
+                          <Button
+                            variant="primary"
+                            icon={Clock3}
+                            disabled={busy}
+                            onClick={() =>
+                              handleRealTransition('PENDING_REVIEW', 'Agreement marked ready for review')
+                            }
+                          >
+                            Mark ready for review
+                          </Button>
+                          <Button
+                            variant="default"
+                            icon={X}
+                            disabled={busy}
+                            onClick={() => handleRealTransition('CANCELLED', 'Agreement cancelled')}
+                          >
+                            Cancel agreement
+                          </Button>
+                          <Button variant="default" icon={Copy} disabled={busy} onClick={handleDuplicate}>
+                            Duplicate agreement
+                          </Button>
+                          <Button variant="danger" icon={Trash2} disabled={busy} onClick={handleDelete}>
+                            Delete draft
+                          </Button>
+                          <Button
+                            variant="default"
+                            icon={Send}
+                            disabled={true}
+                            title="Available in an upcoming release (Phase 6)"
+                            aria-label="Send for signature (Available in an upcoming release Phase 6)"
+                          >
+                            Send for signature
+                          </Button>
+                        </>
+                      )}
+
+                      {/* PENDING_REVIEW STATE ACTIONS */}
+                      {a.rawStatus === 'PENDING_REVIEW' && (
+                        <>
+                          <Button
+                            icon={PenLine}
+                            onClick={() => navigate({ to: '/app/new', search: { edit: a.id } })}
+                          >
+                            Edit agreement
+                          </Button>
+                          <Button
+                            variant="default"
+                            disabled={busy}
+                            onClick={() => handleRealTransition('DRAFT', 'Agreement reopened as draft')}
+                          >
+                            Reopen as draft
+                          </Button>
+                          <Button
+                            variant="default"
+                            icon={X}
+                            disabled={busy}
+                            onClick={() => handleRealTransition('CANCELLED', 'Agreement cancelled')}
+                          >
+                            Cancel agreement
+                          </Button>
+                          <Button variant="default" icon={Copy} disabled={busy} onClick={handleDuplicate}>
+                            Duplicate agreement
+                          </Button>
+                          <Button
+                            variant="default"
+                            icon={Send}
+                            disabled={true}
+                            title="Available in an upcoming release (Phase 6)"
+                            aria-label="Send for signature (Available in an upcoming release Phase 6)"
+                          >
+                            Send for signature
+                          </Button>
+                        </>
+                      )}
+
+                      {/* CANCELLED STATE ACTIONS */}
+                      {a.rawStatus === 'CANCELLED' && (
+                        <>
+                          <p className={s.muted}>This agreement is cancelled.</p>
+                          <Button variant="default" icon={Copy} disabled={busy} onClick={handleDuplicate}>
+                            Duplicate agreement
+                          </Button>
+                        </>
+                      )}
+
+                      {/* ACTIVE / COMPLETED SIGNING STATES */}
+                      {!['DRAFT', 'PENDING_REVIEW', 'CANCELLED'].includes(a.rawStatus) && (
+                        <>
+                          <p className={s.muted}>
+                            This agreement is in an active signing state or completed.
+                          </p>
+                          <Button variant="default" icon={Copy} disabled={busy} onClick={handleDuplicate}>
+                            Duplicate agreement
+                          </Button>
+                        </>
+                      )}
+                    </>
                   ) : (
                     <>
                       {writable && canEdit(a.status) && (
-                        <Button
-                          onClick={() => navigate({ to: '/app/new', search: { edit: a.id } })}
-                        >
+                        <Button onClick={() => navigate({ to: '/app/new', search: { edit: a.id } })}>
                           Edit agreement
                         </Button>
                       )}
@@ -295,17 +581,11 @@ export function Detail({ id }) {
                           </Button>
                         ))}
                       {['Sent', 'Awaiting Signatures', 'Partially Signed'].includes(a.status) && (
-                        <Link
-                          to="/sign/$token"
-                          params={{ token: a.token }}
-                          className={s.textLink}
-                        >
+                        <Link to="/sign/$token" params={{ token: a.token }} className={s.textLink}>
                           Open demo signing portal →
                         </Link>
                       )}
-                      {!actions.length && (
-                        <p className={s.muted}>This agreement is finalized.</p>
-                      )}
+                      {!actions.length && <p className={s.muted}>This agreement is finalized.</p>}
                     </>
                   )}
                 </div>
@@ -313,6 +593,7 @@ export function Detail({ id }) {
             </div>
           </>
         )}
+
         {tab === 'Document' && (
           <>
             <div className={s.toolbar}>
@@ -323,6 +604,7 @@ export function Detail({ id }) {
             <Document agreement={a} />
           </>
         )}
+
         {tab === 'Parties' && (
           <section className={s.panel}>
             {(a.parties || []).map((p, i) => (
@@ -332,11 +614,7 @@ export function Detail({ id }) {
                   <h3>{p.name}</h3>
                   <p>
                     {p.email} ·{' '}
-                    {p.signed
-                      ? 'Signed'
-                      : p.revoked
-                        ? 'Invitation revoked'
-                        : 'Signature pending'}
+                    {p.signed ? 'Signed' : p.revoked ? 'Invitation revoked' : 'Signature pending'}
                   </p>
                 </div>
                 {writable && !p.signed && (
@@ -344,9 +622,7 @@ export function Detail({ id }) {
                     <Button
                       icon={Send}
                       disabled={p.revoked}
-                      onClick={() =>
-                        editAgreement(id, {}, `Demo invitation resent to ${p.name}`)
-                      }
+                      onClick={() => editAgreement(id, {}, `Demo invitation resent to ${p.name}`)}
                     >
                       Resend
                     </Button>
@@ -379,6 +655,7 @@ export function Detail({ id }) {
             )}
           </section>
         )}
+
         {tab === 'Activity & Audit' && (
           <>
             <div className={s.toolbar}>
@@ -388,7 +665,7 @@ export function Detail({ id }) {
                   if (isReal && a.auditVerification) {
                     setVerify(
                       a.auditVerification.isValid
-                        ? `Cryptographic SHA-256 chain verified — ${a.auditVerification.eventCount} immutable events, zero tampering detected.`
+                        ? `Cryptographic SHA-256 chain verified — ${a.auditVerification.eventCount} immutable events, sequence continuity confirmed.`
                         : `Chain verification failed: ${a.auditVerification.reason}`
                     );
                     return;
@@ -409,10 +686,14 @@ export function Detail({ id }) {
               </Button>
               {verify && <span role="status">{verify}</span>}
             </div>
+
             {a.audit?.length ? (
               a.audit.map((event, i) => (
                 <div className={s.auditRow} key={i}>
-                  <h3>{event.action}</h3>
+                  <h3>
+                    {event.seq ? `#${event.seq} ` : ''}
+                    {event.action}
+                  </h3>
                   <p>
                     {event.actor} · {new Date(event.date).toLocaleString()}
                   </p>
@@ -427,35 +708,151 @@ export function Detail({ id }) {
             )}
           </>
         )}
+
         {tab === 'Versions' && (
           <>
-            <div className={s.toolbar}>
-              <Select
-                label="First version"
-                value={ver1}
-                onChange={(e) => setVer1(e.target.value)}
-                options={(a.versions || []).map((v, i) => ({ label: v.name, value: String(i) }))}
-              />
-              <Select
-                label="Compare with"
-                value={ver2}
-                onChange={(e) => setVer2(e.target.value)}
-                options={(a.versions || []).map((v, i) => ({ label: v.name, value: String(i) }))}
-              />
-            </div>
-            <div className={s.formGrid}>
-              {[ver1, ver2].map((index, i) => (
-                <div key={i} className={s.document}>
-                  <h2>{a.versions?.[Number(index)]?.name ?? 'No second version'}</h2>
-                  <p>
-                    {a.versions?.[Number(index)]?.text ??
-                      'Edit and save this agreement to create another version.'}
-                  </p>
+            {isReal ? (
+              <>
+                <div className={s.toolbar}>
+                  <Select
+                    label="Base version"
+                    value={ver1}
+                    onChange={(e) => setVer1(e.target.value)}
+                    options={realVersions.map((v) => ({
+                      label: `v${v.versionNumber}.0 — ${v.changeSummary || 'Snapshot'} (${new Date(v.createdAt).toLocaleDateString()})`,
+                      value: String(v.versionNumber),
+                    }))}
+                  />
+                  <Select
+                    label="Compare with version"
+                    value={ver2}
+                    onChange={(e) => setVer2(e.target.value)}
+                    options={realVersions.map((v) => ({
+                      label: `v${v.versionNumber}.0 — ${v.changeSummary || 'Snapshot'} (${new Date(v.createdAt).toLocaleDateString()})`,
+                      value: String(v.versionNumber),
+                    }))}
+                  />
                 </div>
-              ))}
-            </div>
+
+                <div className={s.summaryGrid} style={{ padding: '10px 0' }}>
+                  <div>
+                    <h3>Version {ver1} snapshot</h3>
+                    <p style={{ fontSize: 13 }}>
+                      {v1Detail ? (
+                        <>
+                          Created by {v1Detail.creator?.profile?.displayName || v1Detail.creator?.email} on{' '}
+                          {new Date(v1Detail.createdAt).toLocaleDateString()}
+                          <br />
+                          <small className={s.hash}>Hash: {v1Detail.contentHash?.slice(0, 16)}…</small>
+                        </>
+                      ) : (
+                        'Select a version'
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <h3>Version {ver2} snapshot</h3>
+                    <p style={{ fontSize: 13 }}>
+                      {v2Detail ? (
+                        <>
+                          Created by {v2Detail.creator?.profile?.displayName || v2Detail.creator?.email} on{' '}
+                          {new Date(v2Detail.createdAt).toLocaleDateString()}
+                          <br />
+                          <small className={s.hash}>Hash: {v2Detail.contentHash?.slice(0, 16)}…</small>
+                        </>
+                      ) : (
+                        'Select a version'
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <h3>Diff status</h3>
+                    <p style={{ fontSize: 13 }}>
+                      {ver1 === ver2 ? 'Identical versions selected' : `${sectionDiff.length} clauses analyzed`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={s.stack} style={{ marginTop: 20 }}>
+                  <h2>Side-by-Side Clause Comparison</h2>
+                  {sectionDiff.length > 0 ? (
+                    sectionDiff.map((d, i) => (
+                      <div key={i} className={s.panel} style={{ marginBottom: 12 }}>
+                        <div className={s.panelHead}>
+                          <h3>
+                            {d.sectionNumber} {d.title}
+                          </h3>
+                          <span
+                            className={
+                              d.type === 'ADDED'
+                                ? s.success
+                                : d.type === 'DELETED'
+                                  ? s.error
+                                  : d.type === 'MODIFIED'
+                                    ? s.notice
+                                    : s.muted
+                            }
+                            style={{ padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}
+                          >
+                            {d.type}
+                          </span>
+                        </div>
+                        <div className={s.formGrid} style={{ padding: 16 }}>
+                          <div>
+                            <small className={s.muted}>Version {ver1}</small>
+                            <p style={{ marginTop: 4, whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                              {d.v1Text || <i className={s.muted}>Clause did not exist in v{ver1}</i>}
+                            </p>
+                          </div>
+                          <div>
+                            <small className={s.muted}>Version {ver2}</small>
+                            <p style={{ marginTop: 4, whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                              {d.v2Text || <i className={s.muted}>Clause was removed in v{ver2}</i>}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <EmptyState
+                      title="No versions to compare"
+                      text="Edit and save this agreement to create multiple version snapshots."
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={s.toolbar}>
+                  <Select
+                    label="First version"
+                    value={ver1}
+                    onChange={(e) => setVer1(e.target.value)}
+                    options={(a.versions || []).map((v, i) => ({ label: v.name, value: String(i) }))}
+                  />
+                  <Select
+                    label="Compare with"
+                    value={ver2}
+                    onChange={(e) => setVer2(e.target.value)}
+                    options={(a.versions || []).map((v, i) => ({ label: v.name, value: String(i) }))}
+                  />
+                </div>
+                <div className={s.formGrid}>
+                  {[ver1, ver2].map((index, i) => (
+                    <div key={i} className={s.document}>
+                      <h2>{a.versions?.[Number(index)]?.name ?? 'No second version'}</h2>
+                      <p>
+                        {a.versions?.[Number(index)]?.text ??
+                          'Edit and save this agreement to create another version.'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
+
         {tab === 'Files' && (
           <section className={s.panel}>
             <div className={s.panelBody}>
@@ -507,6 +904,7 @@ export function Detail({ id }) {
             </div>
           </section>
         )}
+
         {tab === 'Reminders' && (
           <section className={s.panel}>
             <div className={`${s.panelBody} ${s.stack}`}>
@@ -537,7 +935,7 @@ export function Detail({ id }) {
               )}
               <p className={s.muted}>
                 {isReal
-                  ? 'Automated email reminders will be configurable in Phase 5.'
+                  ? 'Automated email reminders will be configurable in an upcoming release.'
                   : 'Demo reminders appear here; no email will be sent.'}
               </p>
               {(a.reminders || []).map((r) => (
@@ -582,7 +980,9 @@ export function Detail({ id }) {
           onClick={() =>
             navigator.clipboard
               .writeText(
-                isReal ? `${window.location.origin}/app/agreements/${a.id}` : `${window.location.origin}/sign/${a.token}`
+                isReal
+                  ? `${window.location.origin}/app/agreements/${a.id}`
+                  : `${window.location.origin}/sign/${a.token}`
               )
               .then(() => toast('Link copied to clipboard'))
               .catch(() => toast('Clipboard unavailable; select and copy the link.'))
@@ -598,7 +998,7 @@ export function Detail({ id }) {
           onSubmit={(e) => {
             e.preventDefault();
             if (isReal) {
-              toast('Party invitation emails will be sent via live SMTP in Phase 5.');
+              toast('Party invitation emails will be sent via live SMTP in Phase 6.');
               setInvite(false);
               return;
             }
@@ -622,7 +1022,7 @@ export function Detail({ id }) {
           />
           <p className={s.muted}>
             {isReal
-              ? 'Counterparty invitations require signing order configuration (Phase 5).'
+              ? 'Counterparty invitations require signing order configuration (Phase 6).'
               : 'Demo invitation only; no email is sent.'}
           </p>
           <Button type="submit" variant="primary" icon={Send}>

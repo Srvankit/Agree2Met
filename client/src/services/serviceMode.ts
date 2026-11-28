@@ -5,7 +5,7 @@
 const USE_MOCK = import.meta.env?.VITE_USE_MOCK !== 'false';
 const rawRealServices =
   import.meta.env?.VITE_REAL_SERVICES ||
-  'auth,users,organizations,dashboard,analytics,agreements,agreements-read';
+  'auth,users,organizations,dashboard,analytics,agreements,agreements-read,agreements-write,categories';
 const REAL_SERVICES = rawRealServices
   .split(',')
   .map((s: string) => s.trim().toLowerCase())

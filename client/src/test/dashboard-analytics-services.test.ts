@@ -150,16 +150,25 @@ describe('Frontend Dashboard & Analytics Services', () => {
       });
     });
 
-    it('enforces safe disabled writes in real mode and throws typed NOT_AVAILABLE_YET error', async () => {
-      await expect(agreementsService.createAgreement()).rejects.toThrow(
-        'Agreement creation will be available in an upcoming release (Phase 5).'
+    it('executes real agreement writes via API in real mode', async () => {
+      const requestSpy = vi.spyOn(api, 'request').mockResolvedValueOnce({
+        success: true,
+        data: { id: 'agr-new', title: 'New Agreement', rowVersion: 1 },
+      });
+
+      const created = await agreementsService.createAgreement(
+        { title: 'New Agreement' },
+        'idem-key-123',
+        'test-org-uuid'
       );
-      await expect(agreementsService.updateAgreement()).rejects.toThrow(
-        'Agreement modification will be available in an upcoming release (Phase 5).'
-      );
-      await expect(agreementsService.deleteAgreement()).rejects.toThrow(
-        'Agreement deletion will be available in an upcoming release (Phase 5).'
-      );
+      expect(created.id).toBe('agr-new');
+      expect(requestSpy).toHaveBeenCalledWith('/agreements', expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'X-Organization-ID': 'test-org-uuid',
+          'Idempotency-Key': 'idem-key-123',
+        }),
+      }));
     });
   });
 });
