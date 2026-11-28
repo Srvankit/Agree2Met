@@ -409,6 +409,44 @@ Maintain **two independent relational tables**, but **enforce dual writes within
 
 ---
 
+## ADR-017: Atomic Sequential Reference Number Generation via Database-Level Upsert
+
+### Context
+Every agreement requires a human-readable, non-gapping, sequential reference identifier in the format `A2M-YYYY-NNNN` (e.g. `A2M-2026-0001`), scoped per organization and calendar year. Under concurrent agreement creation, naive application-level generation (`MAX(reference_number) + 1`) suffers from race conditions, causing duplicate key violations or numbering gaps.
+
+### Decision
+Implement atomic sequence generation via a dedicated table `organization_reference_counters` (`organization_id`, `year`, `last_number`) using PostgreSQL atomic `INSERT ... ON CONFLICT (organization_id, year) DO UPDATE SET last_number = organization_reference_counters.last_number + 1 RETURNING last_number`.
+
+### Concurrency Guarantees
+- The PostgreSQL row-level lock on the `(organization_id, year)` counter row serializes concurrent counter increments with zero application-level distributed locks.
+- Formatting uses zero-padded 4-digit formatting (`A2M-YYYY-` + `last_number.padStart(4, '0')`).
+- If an agreement creation transaction aborts, the counter remains monotonic and gap-free for committed agreements.
+
+---
+
+## ADR-018: Optimistic Concurrency Control & Version Snapshotting Architecture
+
+### Context
+Agreement drafts may be accessed and edited by multiple collaborators or across multiple browser tabs. Uncoordinated overwrites result in lost updates. Furthermore, legal compliance requires immutable historical snapshots whenever significant content modifications occur.
+
+### Decision
+1. **Optimistic Locking (`row_version`):**
+   - Every agreement maintains an integer `row_version` starting at `1`.
+   - Mutating operations (`PUT /agreements/:id` and `PATCH /agreements/:id/autosave`) require `expectedRowVersion`.
+   - If `expectedRowVersion !== agreement.row_version`, the server immediately rejects the update with HTTP 409 Conflict (`CONCURRENT_MODIFICATION`).
+   - The frontend wizard catches 409 conflicts and displays a non-destructive conflict resolution modal allowing the user to either reload the latest server changes or rebase their current draft.
+2. **Autosave vs. Version Snapshots:**
+   - Debounced autosaves (`PATCH /agreements/:id/autosave`) update draft fields in-place without capturing a version snapshot, ensuring fast, typing-friendly persistence.
+   - Explicit full updates (`PUT /agreements/:id`) create an immutable snapshot in `agreement_versions` containing:
+     - `version_number`: monotonically incrementing integer.
+     - `content`: full structured JSON snapshot (title, description, parties, clauses, payment terms).
+     - `content_hash`: SHA-256 hash of canonical content JSON.
+     - `change_summary`: user-supplied or auto-generated change description.
+     - `created_by`: user who committed the version snapshot.
+   - Version snapshots allow side-by-side visual diff inspection and rollbacks.
+
+---
+
 ## Shared Contracts Plan & API Synchronization
 
 With both the backend (`server/`) and frontend (`client/`) utilizing TypeScript, Agree2Met establishes a robust shared contract strategy to guarantee schema parity without code duplication:

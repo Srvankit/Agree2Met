@@ -645,6 +645,75 @@ model ActivityLog {
   @@index([organizationId, createdAt(sort: Desc)], map: "idx_activity_logs_org_date")
   @@map("activity_logs")
 }
+
+// Phase 5 Agreement Creation Engine Models
+
+model AgreementVersion {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agreementId   String   @map("agreement_id") @db.Uuid
+  versionNumber Int      @map("version_number")
+  content       Json     @db.JsonB
+  contentHash   String   @map("content_hash") @db.VarChar(64)
+  createdBy     String   @map("created_by") @db.Uuid
+  changeSummary String?  @map("change_summary") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  creator   User      @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@unique([agreementId, versionNumber], map: "uq_versions_agreement_version")
+  @@index([agreementId, createdAt(sort: Desc)], map: "idx_versions_agreement_created")
+  @@map("agreement_versions")
+}
+
+model AgreementCategoryClause {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId    String   @map("category_id") @db.Uuid
+  sectionNumber String   @map("section_number") @db.VarChar(50)
+  title         String   @db.VarChar(200)
+  content       String   @db.Text
+  isMandatory   Boolean  @default(false) @map("is_mandatory")
+  displayOrder  Int      @default(0) @map("display_order")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  category AgreementCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, displayOrder], map: "idx_category_clauses_cat_order")
+  @@map("agreement_category_clauses")
+}
+
+model OrganizationReferenceCounter {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  year           Int
+  lastNumber     Int      @default(0) @map("last_number")
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, year], map: "uq_ref_counter_org_year")
+  @@map("organization_reference_counters")
+}
+
+model IdempotencyKey {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key            String   @db.VarChar(255)
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  requestHash    String   @map("request_hash") @db.VarChar(64)
+  responseStatus Int      @map("response_status")
+  responseBody   Json     @map("response_body") @db.JsonB
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key], map: "uq_idempotency_org_key")
+  @@index([expiresAt], map: "idx_idempotency_expires_at")
+  @@map("idempotency_keys")
+}
 ```
 
 ---
@@ -657,6 +726,7 @@ model ActivityLog {
   1. `20261126092610_init`: baseline system settings table.
   2. `20261127101310_init_auth_and_organizations`: Phase 3 users, profiles, sessions, organizations, members, and invitations.
   3. `20261127160435_init_agreements_and_analytics`: Phase 4 agreements, categories, counterparties, clauses, payment milestones, chained audit events, and activity logs.
+  4. `20261128060000_agreement_creation_models`: Phase 5 agreement creation engine: `agreement_versions`, `agreement_category_clauses`, `organization_reference_counters`, `idempotency_keys`, optimistic row versioning (`row_version`), soft deletes (`deleted_at`), and check constraints (`chk_agreements_expiration_after_effective`, `chk_agreements_row_version`, `chk_parties_email_format`).
 - Zero manual DDL alterations in production. Deployments execute `npx prisma migrate deploy` in the CI/CD pipeline prior to traffic cutover.
 
 ### 5.2 Development & Demo Seed Fixtures
@@ -664,10 +734,11 @@ The seed script (`server/prisma/seed.ts`) includes a strict production guard ref
 1. **Organizations:** 
    - `Acme Corporation` (primary tenant workspace).
    - `Globex Corporation` (isolated second tenant for multi-tenancy verification).
-2. **Agreement Categories:** 9 standard categories (NDA, MSA, SOW, SLA, DPA, Employment, Contractor, Partnership, License).
+2. **Agreement Categories:** 9 standard categories (NDA, MSA, SOW, SLA, DPA, Employment, Contractor, Partnership, License) with 45 standard template clauses.
 3. **Agreements Dataset:** 
    - 62 realistic agreements for Acme Corporation distributed across all 9 statuses (`DRAFT`, `PENDING_REVIEW`, `SENT`, `AWAITING_SIGNATURES`, `PARTIALLY_SIGNED`, `COMPLETED`, `REJECTED`, `CANCELLED`, `EXPIRED`).
    - 5 isolated agreements for Globex Corporation.
-   - Comprehensive counterparties (`AgreementParty`), legal clauses (`AgreementClause`), and financial payment terms (`AgreementPaymentTerm`).
-4. **Cryptographic Audit Trails:** 220 immutable `AuditEvent` records with monotonic timestamps and SHA-256 hash chaining from genesis block `0`.repeat(64), verified 100% valid.
-5. **Activity Logs:** 25 user and system operational events for live dashboard activity feeds.
+   - Comprehensive counterparties (`AgreementParty`), legal clauses (`AgreementClause`), financial payment terms (`AgreementPaymentTerm`), and 67 version snapshots (`AgreementVersion`).
+4. **Sequential Reference Counters:** Seeded reference counters guaranteeing atomic `A2M-YYYY-NNNN` sequence formatting.
+5. **Cryptographic Audit Trails:** 220 immutable `AuditEvent` records with monotonic sequence numbers (`seq`), real wall-clock timestamps, and SHA-256 hash chaining from genesis block `0`.repeat(64), verified 100% valid.
+6. **Activity Logs:** 25 user and system operational events for live dashboard activity feeds.

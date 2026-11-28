@@ -841,31 +841,147 @@ All API responses follow a uniform JSON envelope:
 
 ---
 
-### 3.8 Safe Write Guards (Deferred Phase 5 Endpoints)
+### 3.8 Agreement Creation Engine Endpoints (Phase 5 Active Contracts)
 
-Unbuilt agreement mutation endpoints are guarded with typed HTTP 501 responses to prevent unintended writes or data corruption prior to Phase 5:
-- `POST /api/v1/agreements` (Agreement creation wizard)
-- `PUT /api/v1/agreements/:id` (Agreement edit)
-- `PATCH /api/v1/agreements/:id/status` (State transitions)
-- `POST /api/v1/agreements/:id/duplicate` (Clone agreement)
-- `POST /api/v1/agreements/:id/archive` (Archive agreement)
-- `POST /api/v1/agreements/:id/unarchive` (Unarchive agreement)
-- `DELETE /api/v1/agreements/:id` (Delete draft agreement)
+#### 3.8.1 `POST /agreements` — Create Draft Agreement
+Creates a new draft agreement within the active organization. Automatically generates a sequential, non-gapping reference number (`A2M-YYYY-NNNN`) under database row-level locking. Supports optional `Idempotency-Key` header for safe retries without duplicate creation.
 
-#### Response Envelope (HTTP 501 Not Implemented):
+- **Access Control:** Authenticated Organization Member (Role: `OWNER`, `ADMIN`, `MEMBER`).
+- **Headers:**
+  - `X-Organization-ID: <org-uuid>` (required)
+  - `Idempotency-Key: <unique-key>` (optional, cached for 24h)
+- **Request Body:**
+```json
+{
+  "title": "Master Services Agreement",
+  "description": "Standard software development agreement",
+  "categoryId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "signingOrder": "PARALLEL",
+  "effectiveDate": "2026-12-01T00:00:00.000Z",
+  "expirationDate": "2026-12-31T23:59:59.000Z",
+  "parties": [
+    {
+      "name": "Alex Morgan",
+      "email": "alex@agree2met.com",
+      "role": "PRIMARY",
+      "partyType": "EXTERNAL",
+      "signingSequence": 1
+    },
+    {
+      "name": "Jordan Smith",
+      "email": "jordan@client.com",
+      "role": "COUNTERPARTY",
+      "partyType": "EXTERNAL",
+      "signingSequence": 2
+    }
+  ],
+  "clauses": [
+    {
+      "sectionNumber": "1.0",
+      "title": "Scope of Work",
+      "content": "Provider will deliver the agreed development services.",
+      "isMandatory": true,
+      "displayOrder": 1
+    }
+  ],
+  "paymentTerms": {
+    "totalAmount": 15000,
+    "currency": "USD",
+    "paymentSchedule": "MILESTONE",
+    "milestones": [
+      { "name": "Initial Deposit", "percentage": 30, "amount": 4500, "status": "PENDING" },
+      { "name": "Final Delivery", "percentage": 70, "amount": 10500, "status": "PENDING" }
+    ]
+  }
+}
+```
+- **Response (HTTP 201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "c1f7b820-2c70-4f30-8456-9195d2c67ef0",
+    "referenceNumber": "A2M-2026-0001",
+    "title": "Master Services Agreement",
+    "status": "DRAFT",
+    "rowVersion": 1,
+    "category": { "id": "...", "name": "Master Services Agreement" },
+    "parties": [ ... ],
+    "clauses": [ ... ],
+    "createdAt": "2026-11-28T12:00:00.000Z"
+  },
+  "message": "Agreement draft created successfully."
+}
+```
+
+#### 3.8.2 `PUT /agreements/:id` — Full Agreement Update & Version Snapshot
+Updates all draft parameters and clause contents. Enforces optimistic locking via `expectedRowVersion`. Captures a complete JSON snapshot in `agreement_versions` with SHA-256 content hashing.
+
+- **Access Control:** Creator or Org Admin/Owner.
+- **Request Body:** Must include `"expectedRowVersion": <number>` alongside updated fields.
+- **Response (HTTP 200 OK):** Returns updated agreement with incremented `rowVersion`.
+- **Conflict Error (HTTP 409 Conflict):**
 ```json
 {
   "success": false,
   "error": {
-    "code": "NOT_AVAILABLE_YET",
-    "message": "Agreement mutation operations are scheduled for Phase 5 (Agreement Creation Engine). Read operations are fully available.",
-    "details": [
-      { "operation": "create", "availableInPhase": "Phase 5" }
-    ]
-  },
-  "timestamp": "2026-11-27T18:00:00.000Z"
+    "code": "CONCURRENT_MODIFICATION",
+    "message": "Agreement has been modified by another session. Please reload the latest changes.",
+    "details": { "currentRowVersion": 2, "providedRowVersion": 1 }
+  }
 }
 ```
+
+#### 3.8.3 `PATCH /agreements/:id/autosave` — Debounced Draft Autosave
+Saves dirty draft fields without disrupting user typing. Verifies `expectedRowVersion`.
+- **Response (HTTP 200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "c1f7b820-2c70-4f30-8456-9195d2c67ef0",
+    "rowVersion": 1,
+    "savedAt": "2026-11-28T12:05:00.000Z"
+  },
+  "message": "Draft autosaved successfully."
+}
+```
+
+#### 3.8.4 `PATCH /agreements/:id/status` — State Machine Transitions
+Executes validated status transitions.
+- **Phase 5 Allowed Transitions:**
+  - `DRAFT` &rarr; `PENDING_REVIEW` (validates completeness criteria)
+  - `PENDING_REVIEW` &rarr; `DRAFT` (reopen)
+  - `DRAFT` / `PENDING_REVIEW` &rarr; `CANCELLED`
+- **Deferred Transitions (Phase 6–7):**
+  Attempting deferred transitions (such as sending for signature) returns a typed HTTP 409:
+```json
+{
+  "success": false,
+  "error": {
+    "code": "TRANSITION_NOT_AVAILABLE_YET",
+    "message": "Sending for signature and live e-signing will be enabled in Phase 6.",
+    "details": { "currentStatus": "DRAFT", "requestedStatus": "AWAITING_SIGNATURES", "availableInPhase": "Phase 6" }
+  }
+}
+```
+
+#### 3.8.5 `POST /agreements/:id/duplicate` — Duplicate Agreement
+Clones an existing agreement into a fresh `DRAFT`. Allocates a new sequential reference number, resets signing statuses, and initializes a clean audit trail.
+
+#### 3.8.6 `POST /agreements/:id/archive` & `POST /agreements/:id/unarchive`
+Toggles `is_archived` status and timestamp.
+
+#### 3.8.7 `DELETE /agreements/:id` — Soft Delete Agreement
+Sets `deleted_at = NOW()`. Restricted to `DRAFT` or terminal agreement states.
+
+#### 3.8.8 `GET /agreements/:id/versions` & `GET /agreements/:id/versions/:versionNumber`
+Lists and retrieves immutable historical version snapshots with cryptographic SHA-256 content hashes for side-by-side comparison and diff inspection.
+
+#### 3.8.9 Category Management Endpoints
+- `GET /api/v1/categories` — Returns categories with template clause counts.
+- `GET /api/v1/categories/:id/template-clauses` — Returns standard template clauses for prefilling Step 3 of the creation wizard.
+- `POST /api/v1/categories`, `PUT /api/v1/categories/:id`, `DELETE /api/v1/categories/:id` — Org Admin category CRUD.
 
 ---
 
