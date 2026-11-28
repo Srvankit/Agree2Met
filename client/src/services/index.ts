@@ -5,5 +5,6 @@ export * from './organizationsService';
 export * from './dashboardService';
 export * from './analyticsService';
 export * from './agreementsService';
+export * from './categoriesService';
 export * from './serviceMode';
 export * from './mock/index';

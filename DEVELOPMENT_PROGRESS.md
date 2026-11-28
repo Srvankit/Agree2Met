@@ -16,8 +16,8 @@
 | **Phase 2** | **UI Design System & Component Library (Lovable Import)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
 | **Phase 3** | **Authentication & User Management (HttpOnly Cookies)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
 | **Phase 4** | **Dashboard & Analytics Engine (Real DB Aggregations)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
-| Phase 5 | Agreement Creation Engine & Basic Snapshots (Wizard) | Pending | 0% | — | Requires Phase 4 (Unblocked) |
-| Phase 6 | Agreement Repository, Search & PDF Compilation | Pending | 0% | — | Requires Phase 5 |
+| **Phase 5** | **Agreement Creation Engine & Snapshots (Wizard Integration)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
+| Phase 6 | Agreement Repository, Search & PDF Compilation | Pending | 0% | — | Requires Phase 5 (Unblocked) |
 | Phase 7 | Guest Collaboration, Signing Canvas & Audit Trail | Pending | 0% | — | Requires Phase 6 |
 | Phase 8 | In-App Notifications & Scheduled Reminders | Pending | 0% | — | Requires Phase 7 |
 | Phase 9 | Context-Aware AI Agreement Assistant | Pending | 0% | — | Requires Phase 8 |
@@ -259,10 +259,63 @@ In accordance with Phase 4 specifications and ADR-013 / ADR-014 / ADR-015, the f
 
 ---
 
-## 11. Next Steps: Phase 5 (Agreement Creation Engine & Basic Snapshots)
+## 11. Phase 5 Implementation & Verification Deliverables (Agreement Creation Engine)
 
-With Phase 4 complete, verified, and signed off:
-1. Create branch `phase/05-agreement-creation`.
-2. Implement Phase 5 multi-step Agreement Creation Wizard backend (`POST /api/v1/agreements`, `PUT /api/v1/agreements/:id`, `PATCH /api/v1/agreements/:id/status`).
-3. Implement basic agreement snapshot versioning (`agreement_versions` table snapshot on creation/revision).
-4. Wire client wizard steps to real backend APIs, replacing 501 guards with operational creation endpoints.
+### 1. Database Schema & Models
+- **Migration `20261128060000_agreement_creation_models` applied successfully:**
+  - `agreement_versions`: full immutable JSON snapshots with SHA-256 content hashes (`content_hash`), version numbers, change summaries, and user tracking.
+  - `agreement_category_clauses`: standard category template clauses with mandatory flags, section numbers, and display orders.
+  - `organization_reference_counters`: atomic counters per organization and year for gap-free `A2M-YYYY-NNNN` sequence formatting.
+  - `idempotency_keys`: hashed request store caching response status and body with TTL for replay protection.
+  - `agreements` table enhancements: optimistic locking (`row_version INT NOT NULL DEFAULT 1`), soft delete (`deleted_at`), archive timestamp (`archived_at`), and check constraints (`chk_agreements_expiration_after_effective`, `chk_agreements_row_version`, `chk_parties_email_format`, and unique `[agreement_id, email]`).
+
+### 2. Backend Services & Controllers
+- **Lifecycle & State Machine (`server/src/domain/lifecycle.ts`):**
+  - Pure state transition validation.
+  - Phase 5 allowed set: `DRAFT <-> PENDING_REVIEW` and `-> CANCELLED`.
+  - Typed 409 `TRANSITION_NOT_AVAILABLE_YET` error for deferred transitions (e.g. sending for signature in Phase 6).
+- **Atomic Reference Number Generator (`server/src/services/reference-number.service.ts`):**
+  - PostgreSQL upsert with RETURNING generating atomic, sequential, non-gapping `A2M-YYYY-NNNN` numbers under concurrency.
+- **XSS & Content Sanitizer (`server/src/utils/sanitize.ts`):**
+  - Strips dangerous HTML/scripts while preserving whitespace and legal formatting.
+- **Agreement Service & Controller (`server/src/services/agreement.service.ts`):**
+  - Full CRUD operations: `POST /agreements`, `PUT /agreements/:id`, `PATCH /agreements/:id/autosave`, `PATCH /agreements/:id/status`, `POST /agreements/:id/duplicate`, `POST /agreements/:id/archive`, `POST /agreements/:id/unarchive`, `DELETE /agreements/:id`.
+  - Versions endpoints: `GET /agreements/:id/versions`, `GET /agreements/:id/versions/:versionNumber`.
+  - Category endpoints: `GET /categories`, `GET /categories/:id/template-clauses`, and category CRUD.
+
+### 3. Frontend Wizard & Detail Integration (`client/`)
+- **6-Step Creation Wizard (`client/src/pages/Wizard.jsx`):**
+  - Categories loaded dynamically from `categoriesService`.
+  - Category template clause prefill in Step 2.
+  - Parties array with roles (`PRIMARY`, `COUNTERPARTY`, `VIEWER`) and signing sequence.
+  - Payment schedules (`MILESTONE`, `FIXED`, `HOURLY`, `NET_30`) with milestone breakdowns.
+  - Debounced 2-second autosave to `PATCH /agreements/:id/autosave` with `expectedRowVersion`.
+  - Concurrent modification conflict modal handling HTTP 409 responses non-destructively ("Reload latest" vs "Keep my version").
+  - Step 6 Finalization: "Save as draft", "Mark ready for review", and disabled "Send for signature" button with accessible tooltip ("Available in an upcoming release (Phase 6)"). Real mode never fakes success silently.
+- **Agreement Detail Page (`client/src/pages/Detail.jsx`):**
+  - Allowed status transitions wired with React Query cache invalidation.
+  - Versions tab fetching real immutable snapshots, comparing two versions side-by-side with section diffs (Added, Modified, Deleted, Unchanged).
+- **Agreement Table Actions (`client/src/components/demo/AgreementTable.jsx`):**
+  - Real duplicate, archive/restore, cancel, and delete actions wired to backend endpoints with confirmation guards.
+
+### 4. Full Automated Test Suite Verification
+- **Server Test Suite:** 17 test files, **106 passing tests (100% pass rate)**.
+  - 24 comprehensive integration tests in `agreement-creation.test.ts` (draft creation, reference generation, concurrent counter allocation, optimistic locking 409s, debounced autosaves, state transitions, version snapshots, category clause prefill, idempotency caching, XSS sanitization, soft deletes).
+  - 17 full auth tests, 13 dashboard/analytics tests, 12-step e2e walkthrough automation, audit chaining, lifecycle, csrf, email, storage, health, and seed safety tests.
+- **Client Test Suite:** 7 test files, **113 passing tests (100% pass rate)**.
+  - Dedicated tests in `agreement-creation-services.test.ts` for all client creation, autosave, versioning, and category service operations.
+  - Full smoke and routing tests across all roles and pages.
+- **Total Combined Tests:** **219 passing tests** across full repository.
+- **Production Build:**
+  - `npm run build --prefix server` compiled with **0 errors**.
+  - `npm run build --prefix client` compiled both client bundle and SSR server with **0 errors**.
+
+---
+
+## 12. Next Steps: Phase 6 (Agreement Repository, Search & PDF Compilation)
+
+With Phase 5 complete, verified, and signed off:
+1. Create branch `phase/06-agreement-repository-pdf`.
+2. Implement server-side PDF compilation pipeline (Playwright/Puppeteer sandboxed worker, PDF generation from HTML/React template, digital watermarking).
+3. Implement advanced full-text search, filter persistence, and multi-field repository queries.
+4. Activate live guest invitation dispatch via BullMQ and Mailpit.

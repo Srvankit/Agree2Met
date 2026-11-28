@@ -22,6 +22,8 @@ async function main() {
       COUNT(*) FILTER (WHERE is_archived = false AND status IN ('SENT', 'AWAITING_SIGNATURES', 'PARTIALLY_SIGNED'))::int AS running,
       COUNT(*) FILTER (WHERE is_archived = false AND status = 'AWAITING_SIGNATURES')::int AS pending_signatures,
       COUNT(*) FILTER (WHERE is_archived = false AND status = 'EXPIRED')::int AS expired,
+      COUNT(*) FILTER (WHERE is_archived = false AND status = 'REJECTED')::int AS rejected,
+      COUNT(*) FILTER (WHERE is_archived = false AND status = 'CANCELLED')::int AS cancelled,
       ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0) FILTER (WHERE is_archived = false AND status = 'COMPLETED' AND completed_at IS NOT NULL), 1)::float AS avg_turnaround
     FROM agreements
     WHERE organization_id = ${acmeOrg.id}::uuid;
@@ -29,6 +31,8 @@ async function main() {
 
   // 2. Service Aggregation Output
   const serviceStats = await dashboardService.getStats(acmeOrg.id);
+  const directTerminal = directSqlStats.completed + directSqlStats.rejected + directSqlStats.cancelled + directSqlStats.expired;
+  const directComputedRate = directTerminal > 0 ? ((directSqlStats.completed / directTerminal) * 100).toFixed(1) : '0';
 
   console.log('Metric Comparison:');
   console.log('----------------------------------------------------');
@@ -38,7 +42,7 @@ async function main() {
   console.log(`Pending Signatures:      Direct SQL = ${directSqlStats.pending_signatures}  |  Dashboard Service = ${serviceStats.pendingSignatures}  |  Match: ${directSqlStats.pending_signatures === serviceStats.pendingSignatures}`);
   console.log(`Expired Agreements:      Direct SQL = ${directSqlStats.expired}  |  Dashboard Service = ${serviceStats.expired}  |  Match: ${directSqlStats.expired === serviceStats.expired}`);
   console.log(`Avg Turnaround Hours:    Direct SQL = ${directSqlStats.avg_turnaround}h  |  Dashboard Service = ${serviceStats.avgTurnaroundHours}h  |  Match: ${directSqlStats.avg_turnaround === serviceStats.avgTurnaroundHours}`);
-  console.log(`Completion Rate:         Computed   = ${((directSqlStats.completed / directSqlStats.total) * 100).toFixed(1)}%  |  Dashboard Service = ${serviceStats.completionRate}%  |  Match: ${((directSqlStats.completed / directSqlStats.total) * 100).toFixed(1) === String(serviceStats.completionRate)}`);
+  console.log(`Completion Rate:         Computed   = ${directComputedRate}%  |  Dashboard Service = ${serviceStats.completionRate}%  |  Match: ${directComputedRate === String(serviceStats.completionRate)}`);
   console.log('----------------------------------------------------\n');
 
   // 3. Analytics Service Verification

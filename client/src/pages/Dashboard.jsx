@@ -14,7 +14,9 @@ import {
   Plus,
   Download,
   FileText,
+  Info,
 } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { useWorkspace } from '../context/Workspace';
 import { Button, Avatar, Modal, Skeleton, EmptyState } from '../components/demo/ui';
 import { AgreementTable } from '../components/demo/AgreementTable';
@@ -89,30 +91,35 @@ export function Dashboard() {
       totalAgreements,
       Files,
       isReal && realStats ? `${realStats.deltas.total > 0 ? '+' : ''}${realStats.deltas.total}% MoM` : `${data.categories?.length || 9} categories`,
+      'Total non-archived agreements created in this organization across all lifecycle statuses.',
     ],
     [
       'Completed',
       completedCount,
       CheckCircle2,
       `${completionRate}% completion rate`,
+      'Agreements signed by all parties. Completion rate = completed / (completed + rejected + cancelled + expired).',
     ],
     [
       'In progress',
       runningCount,
       Activity,
       isReal && realStats ? `${realStats.deltas.running > 0 ? '+' : ''}${realStats.deltas.running}% MoM` : 'Active agreements',
+      'Active agreements currently in flight (Sent, Awaiting Signatures, or Partially Signed).',
     ],
     [
       'Pending signatures',
       pendingCount,
       PenLine,
       'Waiting on parties',
+      'Agreements actively waiting for counterparty or internal signatures.',
     ],
     [
       'Expired',
       expiredCount,
       Clock3,
       'Needs your attention',
+      'Agreements that reached their deadline without full signature execution.',
     ],
   ];
 
@@ -224,10 +231,36 @@ export function Dashboard() {
       </div>
 
       <div className={s.grid}>
-        {metrics.map(([label, value, Icon, foot]) => (
+        {metrics.map(([label, value, Icon, foot, definition]) => (
           <section key={label} className={s.metric}>
             <div className={s.metricTop}>
-              <span>{label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>{label}</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={`Definition of ${label}`}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          color: 'var(--muted-foreground, #64748b)',
+                        }}
+                      >
+                        <Info size={13} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" style={{ maxWidth: '240px', fontSize: '11px', lineHeight: '1.4' }}>
+                      <p>{definition}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Icon />
             </div>
             <div className={s.metricNumber}>{value}</div>

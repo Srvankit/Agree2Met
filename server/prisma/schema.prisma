@@ -38,6 +38,8 @@ model Organization {
   agreementCategories AgreementCategory[]
   agreements          Agreement[]
   activityLogs        ActivityLog[]
+  referenceCounters   OrganizationReferenceCounter[]
+  idempotencyKeys     IdempotencyKey[]
 
   @@index([slug], map: "idx_org_slug")
   @@map("organizations")
@@ -66,6 +68,8 @@ model User {
   sentInvitations   OrganizationInvitation[] @relation("InvitedByUser")
   createdAgreements Agreement[]              @relation("AgreementCreator")
   activityLogs      ActivityLog[]
+  agreementVersions AgreementVersion[]
+  idempotencyKeys   IdempotencyKey[]
 
   @@index([email], map: "idx_users_email")
   @@map("users")
@@ -163,6 +167,7 @@ model AgreementCategory {
 
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   agreements   Agreement[]
+  templateClauses AgreementCategoryClause[]
 
   @@index([slug], map: "idx_categories_slug")
   @@index([organizationId], map: "idx_categories_org")
@@ -189,6 +194,9 @@ model Agreement {
   cancellationReason    String?   @map("cancellation_reason") @db.Text
   rejectionReason       String?   @map("rejection_reason") @db.Text
   isArchived            Boolean   @default(false) @map("is_archived")
+  rowVersion            Int       @default(1) @map("row_version")
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz
+  archivedAt            DateTime? @map("archived_at") @db.Timestamptz
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -200,10 +208,12 @@ model Agreement {
   clauses      AgreementClause[]
   paymentTerms AgreementPaymentTerm?
   auditEvents  AuditEvent[]
+  versions     AgreementVersion[]
 
   @@unique([organizationId, referenceNumber], name: "uq_org_reference")
   @@index([organizationId, status], map: "idx_agreements_org_status")
   @@index([organizationId, createdAt], map: "idx_agreements_org_created_at")
+  @@index([organizationId, deletedAt], map: "idx_agreements_org_deleted_at")
   @@index([expirationDate], map: "idx_agreements_expiration")
   @@index([categoryId], map: "idx_agreements_category")
   @@index([creatorId], map: "idx_agreements_creator")
@@ -227,6 +237,7 @@ model AgreementParty {
 
   agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
 
+  @@unique([agreementId, email], name: "uq_agreement_party_email")
   @@index([agreementId], map: "idx_agreement_parties_agreement")
   @@index([email], map: "idx_agreement_parties_email")
   @@map("agreement_parties")
@@ -269,6 +280,7 @@ model AgreementPaymentTerm {
 model AuditEvent {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   agreementId       String   @map("agreement_id") @db.Uuid
+  seq               Int      @default(1)
   eventType         String   @map("event_type") @db.VarChar(100)
   actorType         String   @map("actor_type") @db.VarChar(50)
   actorId           String?  @map("actor_id") @db.Uuid
@@ -283,6 +295,8 @@ model AuditEvent {
 
   agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
 
+  @@unique([agreementId, seq], name: "uq_audit_agreement_seq")
+  @@index([agreementId, seq], map: "idx_audit_events_agreement_seq")
   @@index([agreementId, createdAt], map: "idx_audit_events_agreement")
   @@map("audit_events")
 }
@@ -303,4 +317,74 @@ model ActivityLog {
 
   @@index([organizationId, createdAt(sort: Desc)], map: "idx_activity_logs_org_date")
   @@map("activity_logs")
+}
+
+// Phase 5 Agreement Creation Engine Models
+
+model AgreementVersion {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agreementId   String   @map("agreement_id") @db.Uuid
+  versionNumber Int      @map("version_number")
+  content       Json     @db.JsonB
+  contentHash   String   @map("content_hash") @db.VarChar(64)
+  createdBy     String   @map("created_by") @db.Uuid
+  changeSummary String?  @map("change_summary") @db.VarChar(500)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  creator   User      @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@unique([agreementId, versionNumber], name: "uq_agreement_version")
+  @@index([agreementId, versionNumber], map: "idx_agreement_versions_num")
+  @@map("agreement_versions")
+}
+
+model AgreementCategoryClause {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId    String   @map("category_id") @db.Uuid
+  sectionNumber String   @map("section_number") @db.VarChar(20)
+  title         String   @db.VarChar(300)
+  content       String   @db.Text
+  isMandatory   Boolean  @default(true) @map("is_mandatory")
+  displayOrder  Int      @map("display_order")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  category AgreementCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, displayOrder], map: "idx_cat_clauses_order")
+  @@map("agreement_category_clauses")
+}
+
+model OrganizationReferenceCounter {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  year           Int
+  lastNumber     Int      @default(0) @map("last_number")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, year], name: "uq_org_reference_counter")
+  @@map("organization_reference_counters")
+}
+
+model IdempotencyKey {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key            String   @db.VarChar(255)
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  requestHash    String   @map("request_hash") @db.VarChar(64)
+  responseStatus Int      @map("response_status")
+  responseBody   Json     @map("response_body") @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key], name: "uq_org_idempotency_key")
+  @@index([expiresAt], map: "idx_idempotency_expires_at")
+  @@map("idempotency_keys")
 }

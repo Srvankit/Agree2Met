@@ -78,7 +78,7 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
     expect(canonicalStringify(objA)).toBe('{"a":2,"m":{"nestedA":"hello","nestedB":true},"z":1}');
   });
 
-  it('correctly creates initial event with GENESIS_HASH', async () => {
+  it('correctly creates initial event with GENESIS_HASH and seq = 1', async () => {
     const event1 = await auditService.createEvent({
       agreementId: testAgreementId,
       eventType: 'AGREEMENT_CREATED',
@@ -89,11 +89,13 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
       payload: { title: 'Audit Test Agreement', initialStatus: 'DRAFT' },
     });
 
+    expect(event1.seq).toBe(1);
     expect(event1.previousEventHash).toBe(GENESIS_HASH);
     expect(event1.eventHash).toHaveLength(64);
 
     const recomputed = computeEventHash({
       agreementId: testAgreementId,
+      seq: event1.seq,
       createdAt: event1.createdAt.toISOString(),
       eventType: 'AGREEMENT_CREATED',
       actorType: 'USER',
@@ -106,7 +108,7 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
     expect(event1.eventHash).toBe(recomputed);
   });
 
-  it('chains second and third events sequentially', async () => {
+  it('chains second and third events sequentially with strict seq increments', async () => {
     const trailBefore = await auditService.getAuditTrail(testAgreementId);
     const prevHash = trailBefore.events[trailBefore.events.length - 1].eventHash;
 
@@ -120,6 +122,7 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
       payload: { recipient: 'partner@example.com' },
     });
 
+    expect(event2.seq).toBe(2);
     expect(event2.previousEventHash).toBe(prevHash);
 
     const event3 = await auditService.createEvent({
@@ -131,6 +134,7 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
       payload: { ip: '1.2.3.4' },
     });
 
+    expect(event3.seq).toBe(3);
     expect(event3.previousEventHash).toBe(event2.eventHash);
 
     const verification = await auditService.verifyChain(testAgreementId);
@@ -138,10 +142,31 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
     expect(verification.eventCount).toBe(3);
   });
 
+  it('detects sequence number discontinuity if seq is altered', async () => {
+    const events = await prisma.auditEvent.findMany({
+      where: { agreementId: testAgreementId },
+      orderBy: { seq: 'asc' },
+    });
+    const targetEvent = events[2]; // third event (seq: 3)
+
+    // Alter seq directly in database (e.g. gap: 1, 2, 5)
+    await prisma.$executeRaw`UPDATE audit_events SET seq = 5 WHERE id = ${targetEvent.id}::uuid`;
+
+    const verification = await auditService.verifyChain(testAgreementId);
+    expect(verification.isValid).toBe(false);
+    expect(verification.reason).toContain('Sequence discontinuity');
+
+    // Restore seq
+    await prisma.$executeRaw`UPDATE audit_events SET seq = 3 WHERE id = ${targetEvent.id}::uuid`;
+
+    const restored = await auditService.verifyChain(testAgreementId);
+    expect(restored.isValid).toBe(true);
+  });
+
   it('detects tampering when an event payload is modified', async () => {
     const events = await prisma.auditEvent.findMany({
       where: { agreementId: testAgreementId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { seq: 'asc' },
     });
     const targetEvent = events[1]; // second event
 
@@ -169,7 +194,7 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
   it('detects tampering when a previous_event_hash link is broken', async () => {
     const events = await prisma.auditEvent.findMany({
       where: { agreementId: testAgreementId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { seq: 'asc' },
     });
     const targetEvent = events[2]; // third event
     const originalHash = targetEvent.previousEventHash;
@@ -194,7 +219,7 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
     expect(restored.isValid).toBe(true);
   });
 
-  it('serializes concurrent event appends safely without chain forking', async () => {
+  it('serializes concurrent event appends safely without chain forking or duplicate seq', async () => {
     // Append 5 events concurrently
     const concurrentPayloads = [
       'SIGNER_AUTHENTICATED',
@@ -220,5 +245,13 @@ describe('Audit Service & Cryptographic Hash Chaining', () => {
     const verification = await auditService.verifyChain(testAgreementId);
     expect(verification.isValid).toBe(true);
     expect(verification.eventCount).toBe(3 + concurrentPayloads.length); // 3 prior + 5 new = 8
+
+    // Verify all sequence numbers are distinct and contiguous 1..8
+    const allEvents = await prisma.auditEvent.findMany({
+      where: { agreementId: testAgreementId },
+      orderBy: { seq: 'asc' },
+    });
+    const seqs = allEvents.map((e) => e.seq);
+    expect(seqs).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 });

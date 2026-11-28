@@ -81,7 +81,8 @@ describe('Phase 4 — Dashboard & Analytics Engine Integration Tests', () => {
       expect(stats.running).toBe(23); // 7 SENT + 10 AWAITING_SIGNATURES + 6 PARTIALLY_SIGNED
       expect(stats.pendingSignatures).toBe(10);
       expect(stats.expired).toBe(4);
-      expect(stats.completionRate).toBe(25.8);
+      // completionRate = completed / (completed + rejected + cancelled + expired) = 16 / (16 + 3 + 3 + 4) = 61.5%
+      expect(stats.completionRate).toBe(61.5);
       expect(stats.avgTurnaroundHours).toBeGreaterThan(0);
 
       // Deltas object must be present
@@ -266,43 +267,6 @@ describe('Phase 4 — Dashboard & Analytics Engine Integration Tests', () => {
       expect(agreement.auditTrail.events.length).toBeGreaterThanOrEqual(1);
       expect(agreement.auditTrail.verification.isValid).toBe(true);
       expect(agreement.auditTrail.verification.eventCount).toBe(agreement.auditTrail.events.length);
-    });
-  });
-
-  describe('Safe Disabled Writes (Phase 4 Constraints)', () => {
-    it('returns 501 NOT_AVAILABLE_YET for POST /api/v1/agreements', async () => {
-      const res = await request(app)
-        .post('/api/v1/agreements')
-        .set('Cookie', acmeCookies.header)
-        .set('X-CSRF-Token', acmeCookies.csrfToken)
-        .set('X-Requested-With', 'XMLHttpRequest')
-        .send({ title: 'New Agreement Attempt' });
-
-      expect(res.status).toBe(501);
-      expect(res.body.error.code).toBe('NOT_AVAILABLE_YET');
-    });
-
-    it('returns 501 NOT_AVAILABLE_YET for PUT /api/v1/agreements/:id', async () => {
-      const res = await request(app)
-        .put(`/api/v1/agreements/${acmeAgreementId}`)
-        .set('Cookie', acmeCookies.header)
-        .set('X-CSRF-Token', acmeCookies.csrfToken)
-        .set('X-Requested-With', 'XMLHttpRequest')
-        .send({ title: 'Update Title Attempt' });
-
-      expect(res.status).toBe(501);
-      expect(res.body.error.code).toBe('NOT_AVAILABLE_YET');
-    });
-
-    it('returns 501 NOT_AVAILABLE_YET for DELETE /api/v1/agreements/:id', async () => {
-      const res = await request(app)
-        .delete(`/api/v1/agreements/${acmeAgreementId}`)
-        .set('Cookie', acmeCookies.header)
-        .set('X-CSRF-Token', acmeCookies.csrfToken)
-        .set('X-Requested-With', 'XMLHttpRequest');
-
-      expect(res.status).toBe(501);
-      expect(res.body.error.code).toBe('NOT_AVAILABLE_YET');
     });
   });
 

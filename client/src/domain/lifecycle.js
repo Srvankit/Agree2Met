@@ -9,8 +9,8 @@ const transitions = {
 };
 export const validActions = status => transitions[status] ?? [];
 export function transition(current, next) { if (!validActions(current).includes(next)) throw new Error(`Cannot change ${current} to ${next}`); return next; }
-export const canEdit = status => ['Draft', 'Pending Review'].includes(status);
-export const canDelete = status => ['Draft', 'Cancelled', 'Rejected', 'Expired'].includes(status);
+export const canEdit = status => ['Draft', 'Pending Review', 'DRAFT', 'PENDING_REVIEW'].includes(status);
+export const canDelete = status => ['Draft', 'Cancelled', 'Rejected', 'Expired', 'DRAFT', 'CANCELLED', 'REJECTED', 'EXPIRED'].includes(status);
 export const consentText = 'I consent to transact electronically and to apply my electronic signature to this document.';
 export const aiDisclaimer = 'Agree2Met AI provides informational assistance only and does not constitute legal advice. Consult a qualified legal professional.';
 export const canManage = role => ['Owner', 'Admin'].includes(role);

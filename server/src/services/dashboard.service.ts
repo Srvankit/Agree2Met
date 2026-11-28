@@ -44,6 +44,8 @@ export class DashboardService {
           COUNT(*) FILTER (WHERE is_archived = false AND status IN ('SENT', 'AWAITING_SIGNATURES', 'PARTIALLY_SIGNED')) AS running,
           COUNT(*) FILTER (WHERE is_archived = false AND status = 'AWAITING_SIGNATURES') AS pending_signatures,
           COUNT(*) FILTER (WHERE is_archived = false AND status = 'EXPIRED') AS expired,
+          COUNT(*) FILTER (WHERE is_archived = false AND status = 'REJECTED') AS rejected,
+          COUNT(*) FILTER (WHERE is_archived = false AND status = 'CANCELLED') AS cancelled,
           ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0) FILTER (WHERE is_archived = false AND status = 'COMPLETED' AND completed_at IS NOT NULL), 1) AS avg_turnaround
         FROM agreements
         WHERE organization_id = ${organizationId}::uuid
@@ -56,6 +58,8 @@ export class DashboardService {
           COUNT(*) FILTER (WHERE is_archived = false AND status IN ('SENT', 'AWAITING_SIGNATURES', 'PARTIALLY_SIGNED')) AS running,
           COUNT(*) FILTER (WHERE is_archived = false AND status = 'AWAITING_SIGNATURES') AS pending_signatures,
           COUNT(*) FILTER (WHERE is_archived = false AND status = 'EXPIRED') AS expired,
+          COUNT(*) FILTER (WHERE is_archived = false AND status = 'REJECTED') AS rejected,
+          COUNT(*) FILTER (WHERE is_archived = false AND status = 'CANCELLED') AS cancelled,
           ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0) FILTER (WHERE is_archived = false AND status = 'COMPLETED' AND completed_at IS NOT NULL), 1) AS avg_turnaround
         FROM agreements
         WHERE organization_id = ${organizationId}::uuid
@@ -69,6 +73,8 @@ export class DashboardService {
           COUNT(*) FILTER (WHERE is_archived = false AND status IN ('SENT', 'AWAITING_SIGNATURES', 'PARTIALLY_SIGNED')) AS running,
           COUNT(*) FILTER (WHERE is_archived = false AND status = 'AWAITING_SIGNATURES') AS pending_signatures,
           COUNT(*) FILTER (WHERE is_archived = false AND status = 'EXPIRED') AS expired,
+          COUNT(*) FILTER (WHERE is_archived = false AND status = 'REJECTED') AS rejected,
+          COUNT(*) FILTER (WHERE is_archived = false AND status = 'CANCELLED') AS cancelled,
           ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0) FILTER (WHERE is_archived = false AND status = 'COMPLETED' AND completed_at IS NOT NULL), 1) AS avg_turnaround
         FROM agreements
         WHERE organization_id = ${organizationId}::uuid
@@ -79,18 +85,24 @@ export class DashboardService {
         COALESCE(a.running, 0)::int AS running,
         COALESCE(a.pending_signatures, 0)::int AS "pendingSignatures",
         COALESCE(a.expired, 0)::int AS expired,
+        COALESCE(a.rejected, 0)::int AS rejected,
+        COALESCE(a.cancelled, 0)::int AS cancelled,
         COALESCE(a.avg_turnaround::float, 0) AS "avgTurnaroundHours",
         COALESCE(cm.total, 0)::int AS cm_total,
         COALESCE(cm.completed, 0)::int AS cm_completed,
         COALESCE(cm.running, 0)::int AS cm_running,
         COALESCE(cm.pending_signatures, 0)::int AS cm_pending,
         COALESCE(cm.expired, 0)::int AS cm_expired,
+        COALESCE(cm.rejected, 0)::int AS cm_rejected,
+        COALESCE(cm.cancelled, 0)::int AS cm_cancelled,
         COALESCE(cm.avg_turnaround::float, 0) AS cm_avg_turnaround,
         COALESCE(pm.total, 0)::int AS pm_total,
         COALESCE(pm.completed, 0)::int AS pm_completed,
         COALESCE(pm.running, 0)::int AS pm_running,
         COALESCE(pm.pending_signatures, 0)::int AS pm_pending,
         COALESCE(pm.expired, 0)::int AS pm_expired,
+        COALESCE(pm.rejected, 0)::int AS pm_rejected,
+        COALESCE(pm.cancelled, 0)::int AS pm_cancelled,
         COALESCE(pm.avg_turnaround::float, 0) AS pm_avg_turnaround
       FROM all_time a, current_month cm, prior_month pm;
     `;
@@ -101,18 +113,24 @@ export class DashboardService {
       running: 0,
       pendingSignatures: 0,
       expired: 0,
+      rejected: 0,
+      cancelled: 0,
       avgTurnaroundHours: 0,
       cm_total: 0,
       cm_completed: 0,
       cm_running: 0,
       cm_pending: 0,
       cm_expired: 0,
+      cm_rejected: 0,
+      cm_cancelled: 0,
       cm_avg_turnaround: 0,
       pm_total: 0,
       pm_completed: 0,
       pm_running: 0,
       pm_pending: 0,
       pm_expired: 0,
+      pm_rejected: 0,
+      pm_cancelled: 0,
       pm_avg_turnaround: 0,
     };
 
@@ -122,10 +140,19 @@ export class DashboardService {
     const pendingSignatures = row.pendingSignatures;
     const expired = row.expired;
     const avgTurnaroundHours = Number(row.avgTurnaroundHours.toFixed(1));
-    const completionRate = total > 0 ? Number(((completed / total) * 100).toFixed(1)) : 0;
 
-    const cmRate = row.cm_total > 0 ? (row.cm_completed / row.cm_total) * 100 : 0;
-    const pmRate = row.pm_total > 0 ? (row.pm_completed / row.pm_total) * 100 : 0;
+    // completionRate = completed / (completed + rejected + cancelled + expired)
+    // Evaluates to 0 when denominator is 0
+    const terminalDenominator = completed + row.rejected + row.cancelled + expired;
+    const completionRate = terminalDenominator > 0
+      ? Number(((completed / terminalDenominator) * 100).toFixed(1))
+      : 0;
+
+    const cmTerminal = row.cm_completed + row.cm_rejected + row.cm_cancelled + row.cm_expired;
+    const cmRate = cmTerminal > 0 ? (row.cm_completed / cmTerminal) * 100 : 0;
+
+    const pmTerminal = row.pm_completed + row.pm_rejected + row.pm_cancelled + row.pm_expired;
+    const pmRate = pmTerminal > 0 ? (row.pm_completed / pmTerminal) * 100 : 0;
 
     const calculateDelta = (curr: number, prev: number) => {
       if (prev === 0) return curr > 0 ? 100 : 0;

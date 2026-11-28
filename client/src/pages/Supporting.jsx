@@ -14,7 +14,9 @@ import {
   Users,
   Search,
   Mail,
+  Info,
 } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { useWorkspace } from '../context/Workspace';
 import {
   Button,
@@ -573,14 +575,42 @@ export function Supporting({ page }) {
             <>
               <div className={s.grid}>
                 {[
-                  ['Total agreements', isAnalyticsReal && realAnalytics ? realAnalytics.summary.totalCreated : metric.total],
-                  ['Completion rate', isAnalyticsReal && realAnalytics ? `${realAnalytics.summary.completionRate}%` : `${metric.rate}%`],
-                  ['Completed', isAnalyticsReal && realAnalytics ? realAnalytics.summary.totalCompleted : metric.completed],
-                  ['Avg turnaround', isAnalyticsReal && realAnalytics ? `${realAnalytics.turnaroundMetrics.avgTurnaroundHours}h` : '32.5h'],
-                  ['Total value', isAnalyticsReal && realAnalytics ? `$${Number(realAnalytics.summary.totalValue).toLocaleString()}` : `$${(metric.total * 15000).toLocaleString()}`],
-                ].map(([label, value]) => (
+                  ['Total agreements', isAnalyticsReal && realAnalytics ? realAnalytics.summary.totalCreated : metric.total, 'Total agreements created in this workspace within the selected range.'],
+                  ['Completion rate', isAnalyticsReal && realAnalytics ? `${realAnalytics.summary.completionRate}%` : `${metric.rate}%`, 'Percentage of resolved agreements signed: completed / (completed + rejected + cancelled + expired).'],
+                  ['Completed', isAnalyticsReal && realAnalytics ? realAnalytics.summary.totalCompleted : metric.completed, 'Total agreements fully signed and legally executed.'],
+                  ['Avg turnaround', isAnalyticsReal && realAnalytics ? `${realAnalytics.turnaroundMetrics.avgTurnaroundHours}h` : '32.5h', 'Average time from agreement creation to completion in hours.'],
+                  ['Total value', isAnalyticsReal && realAnalytics ? `$${Number(realAnalytics.summary.totalValue).toLocaleString()}` : `$${(metric.total * 15000).toLocaleString()}`, 'Total monetary contract value across payment milestones.'],
+                ].map(([label, value, definition]) => (
                   <section className={s.metric} key={label}>
-                    <div className={s.metricTop}>{label}</div>
+                    <div className={s.metricTop}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{label}</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={`Definition of ${label}`}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: 0,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  color: 'var(--muted-foreground, #64748b)',
+                                }}
+                              >
+                                <Info size={13} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" style={{ maxWidth: '240px', fontSize: '11px', lineHeight: '1.4' }}>
+                              <p>{definition}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
                     <div className={s.metricNumber}>{value}</div>
                   </section>
                 ))}
