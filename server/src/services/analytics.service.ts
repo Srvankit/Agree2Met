@@ -166,6 +166,9 @@ export class AnalyticsService {
       SELECT
         COUNT(*)::int AS "totalCreated",
         COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS "totalCompleted",
+        COUNT(*) FILTER (WHERE status = 'REJECTED')::int AS "totalRejected",
+        COUNT(*) FILTER (WHERE status = 'CANCELLED')::int AS "totalCancelled",
+        COUNT(*) FILTER (WHERE status = 'EXPIRED')::int AS "totalExpired",
         COALESCE(SUM(pt.total_amount), 0)::float AS "totalValue"
       FROM agreements a
       LEFT JOIN agreement_payment_terms pt ON a.id = pt.agreement_id
@@ -175,10 +178,22 @@ export class AnalyticsService {
         AND a.created_at <= ${toDate}::timestamptz;
     `;
 
-    const summary = summaryRows[0] || { totalCreated: 0, totalCompleted: 0, totalValue: 0 };
+    const summary = summaryRows[0] || {
+      totalCreated: 0,
+      totalCompleted: 0,
+      totalRejected: 0,
+      totalCancelled: 0,
+      totalExpired: 0,
+      totalValue: 0,
+    };
+    const terminalDenominator =
+      (summary.totalCompleted || 0) +
+      (summary.totalRejected || 0) +
+      (summary.totalCancelled || 0) +
+      (summary.totalExpired || 0);
     const completionRate =
-      summary.totalCreated > 0
-        ? Number(((summary.totalCompleted / summary.totalCreated) * 100).toFixed(1))
+      terminalDenominator > 0
+        ? Number(((summary.totalCompleted / terminalDenominator) * 100).toFixed(1))
         : 0;
 
     const turnaround = turnaroundRows[0] || {

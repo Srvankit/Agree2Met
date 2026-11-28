@@ -47,6 +47,7 @@ export function canonicalStringify(obj: any): string {
  */
 export function computeEventHash(params: {
   agreementId: string;
+  seq: number;
   createdAt: string; // ISO string
   eventType: string;
   actorType: string;
@@ -64,6 +65,7 @@ export function computeEventHash(params: {
     eventType: params.eventType,
     payload: params.payload ?? {},
     previousHash: params.previousHash,
+    seq: params.seq,
   });
   return crypto.createHash('sha256').update(canonicalData, 'utf8').digest('hex');
 }
@@ -93,17 +95,17 @@ export class AuditService {
     // Find the current tail of the hash chain for this agreement
     const lastEvent = await tx.auditEvent.findFirst({
       where: { agreementId: input.agreementId },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: { seq: 'desc' },
     });
 
+    const seq = lastEvent ? lastEvent.seq + 1 : 1;
     const previousEventHash = lastEvent ? lastEvent.eventHash : GENESIS_HASH;
-    let createdAt = input.createdAt || new Date();
-    if (lastEvent && createdAt <= lastEvent.createdAt) {
-      createdAt = new Date(lastEvent.createdAt.getTime() + 1000);
-    }
+    // Real event timestamp (monotonic timestamp offset removed in Phase 5 in favor of seq ordering)
+    const createdAt = input.createdAt || new Date();
 
     const eventHash = computeEventHash({
       agreementId: input.agreementId,
+      seq,
       createdAt: createdAt.toISOString(),
       eventType: input.eventType,
       actorType: input.actorType,
@@ -116,6 +118,7 @@ export class AuditService {
     const event = await tx.auditEvent.create({
       data: {
         agreementId: input.agreementId,
+        seq,
         eventType: input.eventType,
         actorType: input.actorType,
         actorId: input.actorId || null,
@@ -134,6 +137,7 @@ export class AuditService {
       {
         agreementId: input.agreementId,
         eventId: event.id,
+        seq,
         eventType: input.eventType,
         eventHash,
         previousEventHash,
@@ -150,7 +154,7 @@ export class AuditService {
   public async verifyChain(agreementId: string): Promise<AuditChainVerificationResult> {
     const events = await prisma.auditEvent.findMany({
       where: { agreementId },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: { seq: 'asc' },
     });
 
     if (events.length === 0) {
@@ -159,6 +163,17 @@ export class AuditService {
 
     for (let i = 0; i < events.length; i++) {
       const current = events[i];
+      const expectedSeq = i + 1;
+
+      if (current.seq !== expectedSeq) {
+        return {
+          isValid: false,
+          eventCount: events.length,
+          tamperedEventId: current.id,
+          reason: `Sequence discontinuity at index ${i}: expected seq ${expectedSeq}, got ${current.seq}`,
+        };
+      }
+
       const expectedPrevHash = i === 0 ? GENESIS_HASH : events[i - 1].eventHash;
 
       if (current.previousEventHash !== expectedPrevHash) {
@@ -175,6 +190,7 @@ export class AuditService {
 
       const expectedHash = computeEventHash({
         agreementId: current.agreementId,
+        seq: current.seq,
         createdAt: current.createdAt.toISOString(),
         eventType: current.eventType,
         actorType: current.actorType,
@@ -207,7 +223,7 @@ export class AuditService {
     const verification = await this.verifyChain(agreementId);
     const events = await prisma.auditEvent.findMany({
       where: { agreementId },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: { seq: 'asc' },
     });
 
     return {

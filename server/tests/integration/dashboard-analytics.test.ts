@@ -81,7 +81,8 @@ describe('Phase 4 — Dashboard & Analytics Engine Integration Tests', () => {
       expect(stats.running).toBe(23); // 7 SENT + 10 AWAITING_SIGNATURES + 6 PARTIALLY_SIGNED
       expect(stats.pendingSignatures).toBe(10);
       expect(stats.expired).toBe(4);
-      expect(stats.completionRate).toBe(25.8);
+      // completionRate = completed / (completed + rejected + cancelled + expired) = 16 / (16 + 3 + 3 + 4) = 61.5%
+      expect(stats.completionRate).toBe(61.5);
       expect(stats.avgTurnaroundHours).toBeGreaterThan(0);
 
       // Deltas object must be present

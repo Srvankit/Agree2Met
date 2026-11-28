@@ -23,6 +23,7 @@
 - [ADR-013: Cryptographic Audit Hash Chaining & Row-Level Locking](#adr-013-cryptographic-audit-hash-chaining--row-level-locking)
 - [ADR-014: High-Performance In-Database SQL Aggregations for Dashboard & Analytics](#adr-014-high-performance-in-database-sql-aggregations-for-dashboard--analytics)
 - [ADR-015: CSV Formula Injection Mitigation (RFC 4180)](#adr-015-csv-formula-injection-mitigation-rfc-4180)
+- [ADR-016: Dual Logging Strategy — Activity Feed vs. Tamper-Evident Audit Ledger](#adr-016-dual-logging-strategy--activity-feed-vs-tamper-evident-audit-ledger)
 - [Shared Contracts Plan & API Synchronization](#shared-contracts-plan--api-synchronization)
 - [Frontend Service to Backend API Mapping](#frontend-service-to-backend-api-mapping)
 
@@ -330,17 +331,17 @@ Implement **canonical SHA-256 hash chaining** with **strict row-level locking (`
    ```
    This serializes all concurrent operations for that specific agreement while allowing concurrent operations across different agreements to proceed in parallel.
 2. **Canonical Hash Computation:**
-   The digest is calculated over deterministic, sorted JSON serialization:
-   $$\text{Hash}_n = \text{SHA256}(\text{CanonicalJSON}(\{ \text{agreementId}, \text{createdAt}, \text{eventType}, \text{actorType}, \text{actorId}, \text{actorEmail}, \text{payload}, \text{previousHash} \}))$$
+   The digest is calculated over deterministic, sorted JSON serialization including the sequence number:
+   $$\text{Hash}_n = \text{SHA256}(\text{CanonicalJSON}(\{ \text{agreementId}, \text{seq}, \text{createdAt}, \text{eventType}, \text{actorType}, \text{actorId}, \text{actorEmail}, \text{payload}, \text{previousHash} \}))$$
 3. **Genesis Anchor:**
    The first event for an agreement references the genesis hash:
    $$\text{Hash}_0 = \text{"0"}\times 64$$
-4. **Monotonic Timestamps:**
-   To prevent sub-millisecond timestamp collisions between successive events for the same agreement, the service guarantees each successive event timestamp is strictly greater than the preceding event (`lastEvent.createdAt + 1000ms` if clock identical).
+4. **Sequence Numbering (`seq`) & True Event Timestamps:**
+   Replaces artificial monotonic millisecond timestamp offsets with a deterministic integer sequence key (`seq`, starting at 1, unique per agreement). Event timestamps (`createdAt`) represent the true, unmanipulated wall-clock time of the event.
 5. **Database Immutability:**
    `audit_events.agreement_id` is defined with `ON DELETE RESTRICT`. Agreements with audit records cannot be hard deleted; they must be archived.
 6. **Chain Verification (`verifyChain`):**
-   Re-computes every hash from genesis through the latest event, verifying link continuity and payload integrity.
+   Re-computes every hash from genesis through the latest event, verifying sequence continuity (`seq === i + 1`), uniqueness, and hash link continuity.
 
 ---
 
@@ -355,11 +356,14 @@ Execute all aggregation, filtering, percentile calculations, and time series buc
 ### Implementation Details:
 1. **Single-Query Dashboard Stats:**
    Uses conditional aggregation `COUNT(*) FILTER (WHERE ...)` and `ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0) ...)` to calculate all dashboard metrics in a single database round-trip (2.8ms execution time).
-2. **Zero-Filled Time Series:**
+2. **Standardized Completion Rate Formula:**
+   $$\text{CompletionRate} = \frac{\text{Completed}}{\text{Completed} + \text{Rejected} + \text{Cancelled} + \text{Expired}} \times 100$$
+   Returns 0 when the resolved terminal denominator is 0, excluding ongoing drafts and running agreements.
+3. **Zero-Filled Time Series:**
    Uses PostgreSQL `generate_series()` combined with `LEFT JOIN` on date intervals (`day`, `week`, `month`, `quarter`) to guarantee continuous chart series without missing date gaps.
-3. **Exact Turnaround Percentiles:**
+4. **Exact Turnaround Percentiles:**
    Uses PostgreSQL ordered-set aggregate `PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0)` to compute true median turnaround durations without outliers skewing the metric.
-4. **Multi-Tenant Index Coverage:**
+5. **Multi-Tenant Index Coverage:**
    Composite indexes (`idx_agreements_org_status`, `idx_agreements_org_created_at`, `idx_agreements_expiration`) ensure high selectivity and index-only scans under tenant filtering.
 
 ---
@@ -376,6 +380,32 @@ Implement strict **formula injection prefix escaping** adhering to RFC 4180 reco
 1. If any field value begins with `=`, `+`, `-`, `@`, `\t`, or `\r`, prepend a single quote `'` to the cell content before CSV serialisation.
 2. Standard RFC 4180 escaping applies: wrap fields containing commas, double quotes, or newlines in double quotes, and escape internal double quotes by doubling them (`""`).
 3. Set HTTP headers: `Content-Type: text/csv; charset=utf-8` and `Content-Disposition: attachment; filename="agree2met-analytics-YYYY-MM-DD.csv"`.
+
+---
+
+## ADR-016: Dual Logging Strategy — Activity Feed vs. Tamper-Evident Audit Ledger
+
+### Context
+Agree2Met serves two distinct operational and evidentiary logging requirements:
+1. **User-Facing Activity Stream (`activity_logs`):** A high-level, human-readable notification feed displayed on the organization dashboard for team collaboration (e.g. "Sarah invited Alex", "Agreement exported to CSV"). It is organization-scoped, filterable, and soft-referenced (`user_id` `ON DELETE SET NULL`).
+2. **Cryptographically Chained Audit Trail (`audit_events`):** A formal, legally significant, tamper-evident ledger proving exact evidentiary facts regarding agreement lifecycle events (creation, invitation, viewing, consent, signature, cancellation). It is agreement-scoped, sequential (`seq`), SHA-256 hash-chained, and immutable (`agreement_id` `ON DELETE RESTRICT`).
+
+### Decision
+Maintain **two independent relational tables**, but **enforce dual writes within the same interactive database transaction (`$transaction`)** whenever an agreement undergoes a mutation or status transition.
+
+### Operational Separation & Guarantees:
+| Dimension | `activity_logs` (User Feed) | `audit_events` (Evidentiary Ledger) |
+|---|---|---|
+| **Scope** | Organization workspace level | Per-Agreement contract level |
+| **Integrity Model** | Standard append-only relational rows | SHA-256 canonical hash chained with monotonic `seq` |
+| **Referential Action** | `user_id ON DELETE SET NULL` | `agreement_id ON DELETE RESTRICT` (Never deleted) |
+| **Visibility** | Dashboard feed, team notifications | Agreement detail "Audit Trail" tab, legal verification |
+| **Concurrency Lock** | None (standard insert) | Serialized under `SELECT ... FOR UPDATE` |
+| **Atomic Transaction** | Written in same `$transaction` as agreement mutation | Written in same `$transaction` as agreement mutation |
+
+### Consequences:
+- If either logging write fails, the entire interactive transaction aborts and rolls back, ensuring the user feed and cryptographic ledger never drift out of synchronization.
+- Allows user accounts to be anonymized or soft-deleted under GDPR data export/deletion workflows (`user_id = NULL` in `activity_logs`) without breaking the evidentiary integrity of the agreement's chained audit trail.
 
 ---
 

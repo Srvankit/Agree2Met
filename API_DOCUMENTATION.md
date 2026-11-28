@@ -519,6 +519,19 @@ All API responses follow a uniform JSON envelope:
 #### `GET /api/v1/dashboard/stats`
 - **Access Control:** Authenticated (Member of Organization)
 - **Description:** Single-query SQL aggregation calculating KPI counts, rates, turnaround durations, and month-over-month deltas.
+- **Metric Definitions & Mathematical Formulations:**
+  - `total`: Total non-archived agreements created in this workspace across all lifecycle statuses (`COUNT(*) FILTER (WHERE is_archived = false)`).
+  - `completed`: Agreements where all signers have executed binding electronic signatures (`status = 'COMPLETED'`).
+  - `running`: Active agreements currently in flight (`status IN ('SENT', 'AWAITING_SIGNATURES', 'PARTIALLY_SIGNED')`).
+  - `pendingSignatures`: Agreements actively awaiting counterparties or internal parties to sign (`status = 'AWAITING_SIGNATURES'`).
+  - `expired`: Agreements that passed their expiration deadline without being completed (`status = 'EXPIRED'`).
+  - `completionRate`: Percentage of concluded agreements successfully signed:
+    $$\text{completionRate} = \frac{\text{completed}}{\text{completed} + \text{rejected} + \text{cancelled} + \text{expired}} \times 100$$
+    Evaluates strictly to `0` when the denominator is 0 (e.g. empty workspace or only active drafts/running agreements).
+  - `avgTurnaroundHours`: Mean duration in hours from agreement creation to completed signing:
+    $$\text{avgTurnaroundHours} = \text{ROUND}(\text{AVG}(\text{EXTRACT}(\text{EPOCH FROM } (\text{completed\_at} - \text{created\_at})) / 3600.0), 1)$$
+  - `deltas`: Month-over-month percentage change comparing current month to prior month:
+    $$\text{deltaPercent} = \frac{\text{current\_month} - \text{prior\_month}}{\text{prior\_month}} \times 100$$
 - **Response Body (200 OK):**
 ```json
 {
@@ -529,12 +542,16 @@ All API responses follow a uniform JSON envelope:
     "running": 23,
     "pendingSignatures": 10,
     "expired": 4,
-    "completionRate": 25.8,
-    "avgTurnaroundHours": 42.4,
+    "completionRate": 61.5,
+    "avgTurnaroundHours": 57.8,
     "deltas": {
-      "totalDeltaPercent": 8.5,
-      "completedDeltaPercent": 14.2,
-      "runningDeltaPercent": -3.1
+      "total": 8.5,
+      "completed": 14.2,
+      "running": -3.1,
+      "pendingSignatures": 0,
+      "expired": 0,
+      "completionRate": 12.0,
+      "avgTurnaroundHours": -5.4
     }
   },
   "message": "Dashboard statistics retrieved successfully."

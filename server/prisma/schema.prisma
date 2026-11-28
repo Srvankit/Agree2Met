@@ -269,6 +269,7 @@ model AgreementPaymentTerm {
 model AuditEvent {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   agreementId       String   @map("agreement_id") @db.Uuid
+  seq               Int      @default(1)
   eventType         String   @map("event_type") @db.VarChar(100)
   actorType         String   @map("actor_type") @db.VarChar(50)
   actorId           String?  @map("actor_id") @db.Uuid
@@ -283,6 +284,8 @@ model AuditEvent {
 
   agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
 
+  @@unique([agreementId, seq], name: "uq_audit_agreement_seq")
+  @@index([agreementId, seq], map: "idx_audit_events_agreement_seq")
   @@index([agreementId, createdAt], map: "idx_audit_events_agreement")
   @@map("audit_events")
 }

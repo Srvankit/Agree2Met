@@ -581,6 +581,105 @@ export async function main() {
     });
   }
 
+  // Large Scale Dataset (~25,000 agreements for perf-corp)
+  if (process.argv.includes('--scale=large')) {
+    console.log('\nGenerating LARGE dataset (~25,000 agreements) for performance testing (--scale=large)...');
+    const perfOrg = await prisma.organization.upsert({
+      where: { slug: 'perf-corp' },
+      update: {
+        name: 'Performance Benchmark Corp',
+        billingEmail: 'perf@agree2met.com',
+        subscriptionTier: 'ENTERPRISE',
+      },
+      create: {
+        name: 'Performance Benchmark Corp',
+        slug: 'perf-corp',
+        billingEmail: 'perf@agree2met.com',
+        subscriptionTier: 'ENTERPRISE',
+      },
+    });
+
+    const perfUser = await prisma.user.upsert({
+      where: { email: 'perf@agree2met.com' },
+      update: { passwordHash, isEmailVerified: true },
+      create: {
+        email: 'perf@agree2met.com',
+        passwordHash,
+        isEmailVerified: true,
+        profile: {
+          create: {
+            firstName: 'Perf',
+            lastName: 'Runner',
+            displayName: 'Perf Benchmark Runner',
+          },
+        },
+      },
+    });
+
+    await prisma.organizationMember.upsert({
+      where: {
+        uq_org_user: {
+          organizationId: perfOrg.id,
+          userId: perfUser.id,
+        },
+      },
+      update: { role: 'OWNER' },
+      create: {
+        organizationId: perfOrg.id,
+        userId: perfUser.id,
+        role: 'OWNER',
+      },
+    });
+
+    console.log('Cleaning old perf-corp records...');
+    await prisma.agreement.deleteMany({ where: { organizationId: perfOrg.id } });
+
+    const totalLarge = 25000;
+    const batchSize = 2500;
+    const catList = Array.from(categoryMap.values());
+    const statuses = [
+      'COMPLETED', 'COMPLETED', 'COMPLETED', 'COMPLETED',
+      'AWAITING_SIGNATURES', 'AWAITING_SIGNATURES',
+      'SENT', 'PARTIALLY_SIGNED',
+      'DRAFT', 'EXPIRED',
+    ];
+
+    console.log(`Inserting ${totalLarge} agreements into perf-corp in batches of ${batchSize}...`);
+    for (let batch = 0; batch < totalLarge / batchSize; batch++) {
+      const agreementsBatch = [];
+      for (let i = 0; i < batchSize; i++) {
+        const idx = batch * batchSize + i + 1;
+        const status = statuses[idx % statuses.length];
+        const catId = catList[idx % catList.length];
+        const daysAgo = (idx % 365) + 1;
+        const created = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+        const completed = status === 'COMPLETED' ? new Date(created.getTime() + 48 * 60 * 60 * 1000) : null;
+        const expiration = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        agreementsBatch.push({
+          referenceNumber: `PRF-2026-${String(idx).padStart(6, '0')}`,
+          organizationId: perfOrg.id,
+          creatorId: perfUser.id,
+          categoryId: catId,
+          title: `Performance Benchmark Agreement #${idx} - ${status}`,
+          description: `Automated high-scale agreement record #${idx} for query indexing and performance benchmarking.`,
+          status,
+          signingOrder: 'PARALLEL',
+          totalSignersCount: 2,
+          completedSignersCount: status === 'COMPLETED' ? 2 : (status === 'PARTIALLY_SIGNED' ? 1 : 0),
+          completedAt: completed,
+          expirationDate: expiration,
+          createdAt: created,
+          updatedAt: completed || created,
+        });
+      }
+
+      await prisma.agreement.createMany({ data: agreementsBatch });
+      console.log(`  Inserted batch ${batch + 1}/${totalLarge / batchSize} (${(batch + 1) * batchSize} rows)`);
+    }
+    console.log(`Successfully populated 25,000 performance agreements for perf-corp.`);
+  }
+
   console.log('Seed completed successfully:');
   console.log('  - 9 System Categories seeded');
   console.log('  - 1 Primary Org (acme-corp) with 62 agreements across all 9 statuses');
