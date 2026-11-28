@@ -270,43 +270,6 @@ describe('Phase 4 — Dashboard & Analytics Engine Integration Tests', () => {
     });
   });
 
-  describe('Safe Disabled Writes (Phase 4 Constraints)', () => {
-    it('returns 501 NOT_AVAILABLE_YET for POST /api/v1/agreements', async () => {
-      const res = await request(app)
-        .post('/api/v1/agreements')
-        .set('Cookie', acmeCookies.header)
-        .set('X-CSRF-Token', acmeCookies.csrfToken)
-        .set('X-Requested-With', 'XMLHttpRequest')
-        .send({ title: 'New Agreement Attempt' });
-
-      expect(res.status).toBe(501);
-      expect(res.body.error.code).toBe('NOT_AVAILABLE_YET');
-    });
-
-    it('returns 501 NOT_AVAILABLE_YET for PUT /api/v1/agreements/:id', async () => {
-      const res = await request(app)
-        .put(`/api/v1/agreements/${acmeAgreementId}`)
-        .set('Cookie', acmeCookies.header)
-        .set('X-CSRF-Token', acmeCookies.csrfToken)
-        .set('X-Requested-With', 'XMLHttpRequest')
-        .send({ title: 'Update Title Attempt' });
-
-      expect(res.status).toBe(501);
-      expect(res.body.error.code).toBe('NOT_AVAILABLE_YET');
-    });
-
-    it('returns 501 NOT_AVAILABLE_YET for DELETE /api/v1/agreements/:id', async () => {
-      const res = await request(app)
-        .delete(`/api/v1/agreements/${acmeAgreementId}`)
-        .set('Cookie', acmeCookies.header)
-        .set('X-CSRF-Token', acmeCookies.csrfToken)
-        .set('X-Requested-With', 'XMLHttpRequest');
-
-      expect(res.status).toBe(501);
-      expect(res.body.error.code).toBe('NOT_AVAILABLE_YET');
-    });
-  });
-
   describe('Multi-Tenant Isolation', () => {
     it('isolates Globex Corp stats from Acme Corp', async () => {
       const res = await request(app)

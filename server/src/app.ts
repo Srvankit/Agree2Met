@@ -39,7 +39,9 @@ export function createApp(): Express {
         'X-CSRF-Token',
         'X-Request-Id',
         'X-Organization-ID',
+        'Idempotency-Key',
       ],
+      exposedHeaders: ['Idempotent-Replay'],
     }),
   );
 
@@ -80,6 +82,7 @@ export function createApp(): Express {
   app.use('/api/v1/analytics', analyticsRouter);
   app.use('/api/v1/agreements', agreementRouter);
   app.use('/api/v1/agreement-categories', categoryRouter);
+  app.use('/api/v1/categories', categoryRouter);
 
   // Dev routes mounted strictly in non-production environments
   if (env.NODE_ENV !== 'production') {
