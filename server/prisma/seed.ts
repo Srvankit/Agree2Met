@@ -8,6 +8,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
+import crypto from 'crypto';
 import { auditService } from '../src/services/audit.service.js';
 
 const prisma = new PrismaClient();
@@ -66,6 +67,57 @@ export async function main() {
         },
       });
       categoryMap.set(cat.slug, created.id);
+    }
+  }
+
+  // Seed template clauses for system categories if empty
+  for (const [slug, categoryId] of categoryMap.entries()) {
+    const existingClauses = await prisma.agreementCategoryClause.count({ where: { categoryId } });
+    if (existingClauses === 0) {
+      await prisma.agreementCategoryClause.createMany({
+        data: [
+          {
+            categoryId,
+            sectionNumber: '1.0',
+            title: 'Scope of Agreement',
+            content: 'The parties agree to the terms, obligations, and deliverables set forth in this agreement and any attached exhibits.',
+            isMandatory: true,
+            displayOrder: 1,
+          },
+          {
+            categoryId,
+            sectionNumber: '2.0',
+            title: 'Confidentiality & Non-Disclosure',
+            content: 'Each party agrees to maintain strict confidentiality regarding all proprietary information disclosed during the term of this agreement.',
+            isMandatory: true,
+            displayOrder: 2,
+          },
+          {
+            categoryId,
+            sectionNumber: '3.0',
+            title: 'Term and Termination',
+            content: 'This agreement shall commence on the effective date and remain in full force until the expiration date or until terminated by mutual written consent.',
+            isMandatory: false,
+            displayOrder: 3,
+          },
+          {
+            categoryId,
+            sectionNumber: '4.0',
+            title: 'Limitation of Liability',
+            content: 'In no event shall either party be liable for any indirect, incidental, special, or consequential damages arising out of or related to this agreement.',
+            isMandatory: true,
+            displayOrder: 4,
+          },
+          {
+            categoryId,
+            sectionNumber: '5.0',
+            title: 'Governing Law and Dispute Resolution',
+            content: 'This agreement shall be governed by and construed in accordance with the laws of Delaware. Any disputes shall be submitted to confidential binding arbitration.',
+            isMandatory: true,
+            displayOrder: 5,
+          },
+        ],
+      });
     }
   }
 
@@ -211,6 +263,9 @@ export async function main() {
   await prisma.auditEvent.deleteMany({
     where: { agreement: { organizationId: { in: orgIds } } },
   });
+  await prisma.agreementVersion.deleteMany({
+    where: { agreement: { organizationId: { in: orgIds } } },
+  });
   await prisma.agreementClause.deleteMany({
     where: { agreement: { organizationId: { in: orgIds } } },
   });
@@ -225,6 +280,21 @@ export async function main() {
   });
   await prisma.activityLog.deleteMany({
     where: { organizationId: { in: orgIds } },
+  });
+  await prisma.idempotencyKey.deleteMany({
+    where: { organizationId: { in: orgIds } },
+  });
+
+  // Sequential reference counters
+  await prisma.organizationReferenceCounter.upsert({
+    where: { uq_org_reference_counter: { organizationId: acmeOrg.id, year: 2026 } },
+    update: { lastNumber: 62 },
+    create: { organizationId: acmeOrg.id, year: 2026, lastNumber: 62 },
+  });
+  await prisma.organizationReferenceCounter.upsert({
+    where: { uq_org_reference_counter: { organizationId: globexOrg.id, year: 2026 } },
+    update: { lastNumber: 5 },
+    create: { organizationId: globexOrg.id, year: 2026, lastNumber: 5 },
   });
 
   // Generate 62 Realistic Agreements for Acme Corporation
@@ -411,6 +481,38 @@ export async function main() {
         },
       });
 
+      // Initial Agreement Version (v1 Snapshot)
+      const snapshotPayload = {
+        title,
+        description: `Standard ${catSlug.toUpperCase()} between Acme Corporation and counterparties.`,
+        categoryId,
+        signingOrder: 'PARALLEL',
+        effectiveDate: effectiveDate ? effectiveDate.toISOString() : null,
+        expirationDate: expirationDate ? expirationDate.toISOString() : null,
+        parties: [
+          { name: 'Alex Morgan', email: 'alex@agree2met.com', role: 'SIGNER', partyType: 'INTERNAL', signingSequence: 1 },
+          ...(totalSigners > 1 ? [{ name: cp.name, email: cp.email, role: 'SIGNER', partyType: 'COUNTERPARTY', signingSequence: 2 }] : []),
+        ],
+        clauses: [
+          { sectionNumber: '1.0', title: 'Scope of Services', content: 'The Provider shall perform the services detailed in Exhibit A with professional skill and diligence consistent with industry best practices.', isMandatory: true, displayOrder: 1 },
+          { sectionNumber: '2.0', title: 'Confidentiality & Non-Disclosure', content: 'Each party agrees to hold all Confidential Information in strict confidence and use at least the same degree of care as for its own proprietary information.', isMandatory: true, displayOrder: 2 },
+        ],
+        paymentTerms: amount ? { totalAmount: amount, currency: 'USD', paymentSchedule: 'MILESTONE', billingNotes: 'Standard invoicing terms.' } : null,
+      };
+      const contentHash = crypto.createHash('sha256').update(JSON.stringify(snapshotPayload)).digest('hex');
+
+      await prisma.agreementVersion.create({
+        data: {
+          agreementId: agreement.id,
+          versionNumber: 1,
+          content: snapshotPayload,
+          contentHash,
+          createdBy: acmeUser.id,
+          changeSummary: 'Initial version created',
+          createdAt,
+        },
+      });
+
       // Chained Audit Events
       // Event 1: Creation
       await auditService.createEvent({
@@ -566,6 +668,27 @@ export async function main() {
         completedAt: g === 1 ? now : null,
         createdAt: glxCreated,
         updatedAt: glxCreated,
+      },
+    });
+
+    const glxPayload = {
+      title: `Globex Project Vulcan Agreement #${g}`,
+      description: 'Confidential strategic project agreement for Globex Corporation.',
+      categoryId: glxCatId,
+      signingOrder: 'PARALLEL',
+      parties: [{ name: 'Hank Scorpio', email: 'hank@globex.com', role: 'SIGNER', partyType: 'INTERNAL', signingSequence: 1 }],
+      clauses: [{ sectionNumber: '1.0', title: 'Scope of Project Vulcan', content: 'Secret project terms.', isMandatory: true, displayOrder: 1 }],
+    };
+    const glxContentHash = crypto.createHash('sha256').update(JSON.stringify(glxPayload)).digest('hex');
+    await prisma.agreementVersion.create({
+      data: {
+        agreementId: glxAgreement.id,
+        versionNumber: 1,
+        content: glxPayload,
+        contentHash: glxContentHash,
+        createdBy: globexUser.id,
+        changeSummary: 'Initial version created',
+        createdAt: glxCreated,
       },
     });
 
