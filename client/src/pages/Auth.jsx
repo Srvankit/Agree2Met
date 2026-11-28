@@ -171,8 +171,8 @@ export function Auth({ mode = 'login' }) {
           if (loginErr?.code === 'EMAIL_NOT_VERIFIED') {
             setShowResendBtn(true);
             throw new Error('Your email address is not verified. Please verify your email before signing in.');
-          } else if (loginErr?.code === 'ACCOUNT_LOCKED') {
-            throw new Error('Your account is temporarily locked due to too many failed attempts. Please try again later or reset your password.');
+          } else if (loginErr?.code === 'TOO_MANY_ATTEMPTS' || loginErr?.code === 'ACCOUNT_LOCKED' || loginErr?.status === 429) {
+            throw new Error('Too many attempts. Please try again later.');
           } else if (loginErr?.code === 'INVALID_CREDENTIALS') {
             throw new Error('Invalid email or password.');
           } else {

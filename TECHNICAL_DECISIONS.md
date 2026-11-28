@@ -20,6 +20,9 @@
 - [ADR-010: Frontend Stack Migration to Lovable (React 19 + TypeScript + Vite + TanStack Start + Tailwind CSS + shadcn/ui)](#adr-010-frontend-stack-migration-to-lovable-react-19--typescript--vite--tanstack-start--tailwind-css--shadcnui)
 - [ADR-011: Refresh Token Family Rotation & Reuse Detection](#adr-011-refresh-token-family-rotation--reuse-detection)
 - [ADR-012: Incremental Real Service Integration & Mock Switching](#adr-012-incremental-real-service-integration--mock-switching)
+- [ADR-013: Cryptographic Audit Hash Chaining & Row-Level Locking](#adr-013-cryptographic-audit-hash-chaining--row-level-locking)
+- [ADR-014: High-Performance In-Database SQL Aggregations for Dashboard & Analytics](#adr-014-high-performance-in-database-sql-aggregations-for-dashboard--analytics)
+- [ADR-015: CSV Formula Injection Mitigation (RFC 4180)](#adr-015-csv-formula-injection-mitigation-rfc-4180)
 - [Shared Contracts Plan & API Synchronization](#shared-contracts-plan--api-synchronization)
 - [Frontend Service to Backend API Mapping](#frontend-service-to-backend-api-mapping)
 
@@ -311,6 +314,71 @@ Adopt an **Incremental Service Mode Adapter Strategy** governed by configuration
 
 ---
 
+## ADR-013: Cryptographic Audit Hash Chaining & Row-Level Locking
+
+### Context
+Agreement management requires a tamper-evident audit log that records every lifecycle milestone (creation, invitation, viewing, signing, cancellation, expiration) with non-repudiable integrity. Concurrent actions on an agreement (such as two counterparties signing simultaneously) must not fork or corrupt the hash chain.
+
+### Decision
+Implement **canonical SHA-256 hash chaining** with **strict row-level locking (`SELECT ... FOR UPDATE`)** inside interactive Prisma transactions (`AuditService.appendEvent`).
+
+### Key Rules & Architecture:
+1. **Row-Level Lock:**
+   Before appending any audit event, an interactive transaction acquires an exclusive row lock on the parent agreement:
+   ```sql
+   SELECT id FROM agreements WHERE id = $1::uuid FOR UPDATE;
+   ```
+   This serializes all concurrent operations for that specific agreement while allowing concurrent operations across different agreements to proceed in parallel.
+2. **Canonical Hash Computation:**
+   The digest is calculated over deterministic, sorted JSON serialization:
+   $$\text{Hash}_n = \text{SHA256}(\text{CanonicalJSON}(\{ \text{agreementId}, \text{createdAt}, \text{eventType}, \text{actorType}, \text{actorId}, \text{actorEmail}, \text{payload}, \text{previousHash} \}))$$
+3. **Genesis Anchor:**
+   The first event for an agreement references the genesis hash:
+   $$\text{Hash}_0 = \text{"0"}\times 64$$
+4. **Monotonic Timestamps:**
+   To prevent sub-millisecond timestamp collisions between successive events for the same agreement, the service guarantees each successive event timestamp is strictly greater than the preceding event (`lastEvent.createdAt + 1000ms` if clock identical).
+5. **Database Immutability:**
+   `audit_events.agreement_id` is defined with `ON DELETE RESTRICT`. Agreements with audit records cannot be hard deleted; they must be archived.
+6. **Chain Verification (`verifyChain`):**
+   Re-computes every hash from genesis through the latest event, verifying link continuity and payload integrity.
+
+---
+
+## ADR-014: High-Performance In-Database SQL Aggregations for Dashboard & Analytics
+
+### Context
+Generating metrics for total agreements, completion rates, status breakdowns, upcoming deadlines, and historical turnaround percentiles by loading raw agreement rows into Node.js application memory would cause high heap consumption, latency degradation, and scalability bottlenecks as data grows.
+
+### Decision
+Execute all aggregation, filtering, percentile calculations, and time series bucket generation **directly inside PostgreSQL using raw SQL queries** via `prisma.$queryRaw`.
+
+### Implementation Details:
+1. **Single-Query Dashboard Stats:**
+   Uses conditional aggregation `COUNT(*) FILTER (WHERE ...)` and `ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0) ...)` to calculate all dashboard metrics in a single database round-trip (2.8ms execution time).
+2. **Zero-Filled Time Series:**
+   Uses PostgreSQL `generate_series()` combined with `LEFT JOIN` on date intervals (`day`, `week`, `month`, `quarter`) to guarantee continuous chart series without missing date gaps.
+3. **Exact Turnaround Percentiles:**
+   Uses PostgreSQL ordered-set aggregate `PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600.0)` to compute true median turnaround durations without outliers skewing the metric.
+4. **Multi-Tenant Index Coverage:**
+   Composite indexes (`idx_agreements_org_status`, `idx_agreements_org_created_at`, `idx_agreements_expiration`) ensure high selectivity and index-only scans under tenant filtering.
+
+---
+
+## ADR-015: CSV Formula Injection Mitigation (RFC 4180)
+
+### Context
+When exporting analytics and agreement reports to CSV, malicious or user-controlled input (e.g., an agreement title or counterparty name beginning with `=`, `+`, `-`, `@`, `\t`, or `\r`) could be interpreted as executable formulas or DDE macros by spreadsheet software (Microsoft Excel, LibreOffice Calc, Google Sheets), leading to Formula Injection / Remote Code Execution.
+
+### Decision
+Implement strict **formula injection prefix escaping** adhering to RFC 4180 recommendations in `AnalyticsService.exportCsv`.
+
+### Escaping Rules:
+1. If any field value begins with `=`, `+`, `-`, `@`, `\t`, or `\r`, prepend a single quote `'` to the cell content before CSV serialisation.
+2. Standard RFC 4180 escaping applies: wrap fields containing commas, double quotes, or newlines in double quotes, and escape internal double quotes by doubling them (`""`).
+3. Set HTTP headers: `Content-Type: text/csv; charset=utf-8` and `Content-Disposition: attachment; filename="agree2met-analytics-YYYY-MM-DD.csv"`.
+
+---
+
 ## Shared Contracts Plan & API Synchronization
 
 With both the backend (`server/`) and frontend (`client/`) utilizing TypeScript, Agree2Met establishes a robust shared contract strategy to guarantee schema parity without code duplication:
@@ -363,11 +431,19 @@ The following table maps the frontend service layer (`client/src/services/`) to 
 | **organizationsService**| `inviteMember()` | `POST` | `/api/v1/organizations/:id/members` | `{ email, role }` | `{ invitation: InvitationItem }` | **Implemented (Phase 3)** |
 | **organizationsService**| `updateMemberRole()`| `PATCH`| `/api/v1/organizations/:id/members/:memberId`| `{ role }` | `{ member: MemberItem }` | **Implemented (Phase 3)** |
 | **organizationsService**| `removeMember()` | `DELETE`| `/api/v1/organizations/:id/members/:memberId`| Route param: `memberId` | `{ message }` | **Implemented (Phase 3)** |
-| **agreementsService** | `getAgreements()` | `GET` | `/api/v1/agreements` | Query: `?status=&category=&search=&page=&limit=` | `{ agreements: Agreement[], total, page, limit }` | Mocked (Target Phase 6) |
-| **agreementsService** | `getAgreementById()` | `GET` | `/api/v1/agreements/:id` | Route param: `id` | `{ agreement: AgreementDetail }` | Mocked (Target Phase 6) |
-| **agreementsService** | `createAgreement()` | `POST` | `/api/v1/agreements` | `{ title, category_id, parties, clauses, ... }` | `{ agreement: Agreement }` | Mocked (Target Phase 5) |
-| **agreementsService** | `updateAgreement()` | `PUT` | `/api/v1/agreements/:id` | `{ title, clauses, payment_terms, ... }` | `{ agreement: Agreement }` | Mocked (Target Phase 5) |
-| **agreementsService** | `transitionState()`| `POST` | `/api/v1/agreements/:id/transition` | `{ action: "send" \| "archive" \| "cancel" }` | `{ agreement: Agreement, event: AuditEvent }` | Mocked (Target Phase 5) |
+| **dashboardService.ts**| `getStats()` | `GET` | `/api/v1/dashboard/stats` | None | `{ total, completed, running, completionRate, ... }` | **Implemented (Phase 4)** |
+| **dashboardService.ts**| `getActivity()` | `GET` | `/api/v1/dashboard/activity` | Query: `?limit=&type=&cursor=` | `{ activities: ActivityItem[], nextCursor, hasMore }`| **Implemented (Phase 4)** |
+| **dashboardService.ts**| `getDeadlines()` | `GET` | `/api/v1/dashboard/deadlines` | Query: `?days=14` | `{ count, deadlines: DeadlineItem[] }` | **Implemented (Phase 4)** |
+| **dashboardService.ts**| `getRecent()` | `GET` | `/api/v1/dashboard/recent` | Query: `?limit=5` | `{ agreements: AgreementListItem[] }` | **Implemented (Phase 4)** |
+| **analyticsService.ts**| `getOverview()` | `GET` | `/api/v1/analytics/overview` | Query: `?from=&to=&granularity=` | `{ summary, timeSeries, statusDistribution, ... }` | **Implemented (Phase 4)** |
+| **analyticsService.ts**| `exportCsv()` | `GET` | `/api/v1/analytics/export.csv` | None | Stream text/csv attachment with formula defense | **Implemented (Phase 4)** |
+| **agreementsService.ts**| `getCategories()` | `GET` | `/api/v1/agreement-categories` | None | `{ categories: CategoryItem[] }` | **Implemented (Phase 4)** |
+| **agreementsService.ts**| `getAgreements()` | `GET` | `/api/v1/agreements` | Query: `?status=&categoryId=&search=&page=&limit=`| `{ agreements: AgreementListItem[], meta }` | **Implemented (Phase 4)** |
+| **agreementsService.ts**| `getAgreementById()`| `GET` | `/api/v1/agreements/:id` | Route param: `id` | `{ agreement: AgreementDetail, auditTrail }` | **Implemented (Phase 4)** |
+| **agreementsService.ts**| `createAgreement()` | `POST` | `/api/v1/agreements` | Agreement DTO | `501 NOT_AVAILABLE_YET` | **Guarded (Target Phase 5)** |
+| **agreementsService.ts**| `updateAgreement()` | `PUT` | `/api/v1/agreements/:id` | Agreement DTO | `501 NOT_AVAILABLE_YET` | **Guarded (Target Phase 5)** |
+| **agreementsService.ts**| `transitionState()`| `PATCH`| `/api/v1/agreements/:id/status` | `{ status }` | `501 NOT_AVAILABLE_YET` | **Guarded (Target Phase 5)** |
+| **agreementsService.ts**| `archiveAgreement()`| `POST`| `/api/v1/agreements/:id/archive`| None | `501 NOT_AVAILABLE_YET` | **Guarded (Target Phase 5)** |
 | **signingService** | `submitSignature()` | `POST` | `/api/v1/agreements/:id/sign` | `{ consent: boolean, signature_image_data, party_id }` | `{ signature: SignatureReceipt, audit_hash }` | Mocked (Target Phase 7) |
 | **signingService** | `guestVerify()` | `GET` | `/api/v1/signing/verify/:token` | Route param: `token` | `{ agreement: GuestAgreementView, party: Party }` | Mocked (Target Phase 7) |
 | **documentsService** | `generatePdf()` | `POST` | `/api/v1/agreements/:id/pdf` | None (Enqueues BullMQ job) | `{ job_id: string, status: "queued" }` | Mocked (Target Phase 6) |

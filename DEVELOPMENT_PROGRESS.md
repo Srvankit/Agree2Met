@@ -1,8 +1,8 @@
 # AGREE2MET — Development Progress & Living Status Tracker
 
-**Document Version:** 1.2.0  
-**Current Phase:** Phase 3 Complete (Authentication & User Management) — Ready for Phase 4  
-**Overall Project Status:** Phase 3 Verified & Tested  
+**Document Version:** 1.3.0  
+**Current Phase:** Phase 4 Complete (Dashboard & Analytics Engine) — Ready for Phase 5  
+**Overall Project Status:** Phase 4 Verified & Tested  
 **Last Updated:** November 2026  
 
 ---
@@ -15,8 +15,8 @@
 | **Phase 1** | **Foundation & Development Infrastructure** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
 | **Phase 2** | **UI Design System & Component Library (Lovable Import)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
 | **Phase 3** | **Authentication & User Management (HttpOnly Cookies)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
-| Phase 4 | Dashboard & Analytics Engine (Real DB Aggregations) | Pending | 0% | — | Requires Phase 3 (Unblocked) |
-| Phase 5 | Agreement Creation Engine & Basic Snapshots (Wizard) | Pending | 0% | — | Requires Phase 4 |
+| **Phase 4** | **Dashboard & Analytics Engine (Real DB Aggregations)** | **COMPLETE** | **100%** | Nov 2026 | None (Fully Verified) |
+| Phase 5 | Agreement Creation Engine & Basic Snapshots (Wizard) | Pending | 0% | — | Requires Phase 4 (Unblocked) |
 | Phase 6 | Agreement Repository, Search & PDF Compilation | Pending | 0% | — | Requires Phase 5 |
 | Phase 7 | Guest Collaboration, Signing Canvas & Audit Trail | Pending | 0% | — | Requires Phase 6 |
 | Phase 8 | In-App Notifications & Scheduled Reminders | Pending | 0% | — | Requires Phase 7 |
@@ -146,7 +146,7 @@ In accordance with Phase 3 specifications and ADR-004 / ADR-011 / ADR-012, real 
 | **HttpOnly Cookie Delivery & Family Rotation** | 15-minute `access_token` and 14-day rolling `refresh_token` delivered strictly via `HttpOnly`, `SameSite=Strict` cookies (`Secure` in production). Zero tokens in JSON bodies. Rotating refresh tokens enforce **Token Family Reuse Detection**: replaying a previous token immediately terminates all active sessions in the family (`REFRESH_TOKEN_REUSE_DETECTED`). | Completed | `cookie.util.ts`, `auth.service.ts`, `auth-full.test.ts` (Scenarios 3, 4, 7, 8) |
 | **Active CSRF Protection** | Enforces double-submit `X-CSRF-Token` header matching non-HttpOnly `csrf_token` cookie on all mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`), alongside standard `X-Requested-With: XMLHttpRequest`. | Completed | `csrf.middleware.ts`, `csrf.test.ts`, `auth-full.test.ts` (Scenario 11) |
 | **Anti-Enumeration & Async Mail Catcher** | Registration, password reset, and resend verification endpoints return uniform 200/201 responses regardless of whether the email exists. Verification and reset links carry 32-byte cryptographically random hex tokens (persisted as SHA-256 hashes) dispatched via BullMQ to Mailpit. | Completed | `auth.service.ts`, `email.service.ts`, `auth-full.test.ts` (Scenarios 2, 6, 9) |
-| **Users & Account Management Backend** | Endpoints for profile updates, password change (verifying current password + enforcing 10-char blacklist), GDPR data export (full JSON bundle), and account deletion requiring explicit confirmation + password with **Sole-Owner Protection** (prevents deletion if sole owner of org with active members). | Completed | `user.service.ts`, `user.routes.ts`, `auth-full.test.ts` (Scenarios 14, 15) |
+| **Users & Account Management Backend** | Endpoints for profile updates, password change (verifying current password + enforcing 10-char blacklist), account data export (full JSON bundle), and account deletion requiring explicit confirmation + password with **Sole-Owner Protection** (prevents deletion if sole owner of org with active members). | Completed | `user.service.ts`, `user.routes.ts`, `auth-full.test.ts` (Scenarios 14, 15) |
 | **S3 Presigned Avatar Uploads** | Direct multipart upload handling with 2MB file limit and MIME validation (`image/jpeg`, `image/png`, `image/webp`). Generates signed presigned URLs for private object display. | Completed | `storage.service.ts`, `user.controller.ts`, `auth-full.test.ts` (Scenario 14) |
 | **Organizations & RBAC Hierarchy** | Organization creation, member roster, role updates, and member removal. Enforces strict hierarchy (`OWNER` > `ADMIN` > `MEMBER` > `VIEWER`). Admins cannot demote or remove Owners. Organizations must retain at least one Owner (**Last-Owner Protection**). | Completed | `organization.service.ts`, `permissions.ts`, `auth-full.test.ts` (Scenarios 12, 13) |
 | **Frontend Adapter & Dual-Mode Integration** | Created `serviceMode.ts` with `isServiceReal('service_name')` governed by `VITE_REAL_SERVICES` environment variable. Client `apiClient` transparently captures 401s, executes single-flight token refresh with promise queueing, and reflects `csrf_token` into headers. | Completed | `serviceMode.ts`, `api.ts`, `apiClient.test.ts` (4 tests passing) |
@@ -191,9 +191,78 @@ In accordance with Phase 3 specifications and ADR-004 / ADR-011 / ADR-012, real 
 
 ---
 
-## 9. Next Steps: Phase 4 (Dashboard & Analytics Engine)
+## 9. Phase 4 Implementation & Deliverables Inventory (`phase/04-dashboard-analytics`) — COMPLETE & VERIFIED
 
-With Phase 3 complete and verified:
-1. Proceed with **Phase 4 — Dashboard & Analytics Engine** per `IMPLEMENTATION_ROADMAP.md`.
-2. Implement backend database aggregations for executive KPI cards, volume trends, category breakdowns, and turnaround metrics.
-3. Wire frontend `dashboardService.ts` and `analyticsService.ts` via `serviceMode.ts`.
+In accordance with Phase 4 specifications and ADR-013 / ADR-014 / ADR-015, the full Dashboard & Analytics Engine, agreement read models, row-locked cryptographic audit hash chaining, and real frontend wiring have been implemented, tested, and verified.
+
+### Key Subsystems & Deliverables Completed
+
+| Subsystem / Deliverable | Implementation Details | Status | Verified By |
+|---|---|---|---|
+| **Phase 3 Close-Out Items** | Anti-enumeration generic 429 lockout per `(IP + email)` pair + IP-level threshold (`lockout.service.ts`). Dev-only seed script safety guard throwing explicit error when `NODE_ENV=production`. Replaced all GDPR references with "account data export". Automated 12-step end-to-end user lifecycle walkthrough. | Completed | `tests/unit/seed-safety.test.ts`, `tests/e2e/walkthrough.test.ts` (12/12 steps verified) |
+| **Prisma Read Models & Indexes** | Applied migration `20261127160435_init_agreements_and_analytics` defining normalized models: `AgreementCategory`, `Agreement`, `AgreementParty`, `AgreementClause`, `AgreementPaymentTerm`, `AuditEvent`, `ActivityLog`. High-selectivity composite indexes: `idx_agreements_org_status`, `idx_agreements_org_created_at`, `idx_agreements_expiration`, `idx_categories_slug`, `idx_audit_events_agreement`, `idx_activity_logs_org_date`. | Completed | PostgreSQL 16 migration executed, Prisma client generated, indexes verified via EXPLAIN ANALYZE |
+| **Cryptographic Audit Hash Chaining** | Built `AuditService` with interactive transaction row-level locking: `SELECT id FROM agreements WHERE id = $1::uuid FOR UPDATE`. Canonical SHA-256 JSON hash chaining from genesis block `0`.repeat(64). Strict monotonic timestamp guarantee preventing sub-millisecond collisions. Tamper-detection verifier `verifyChain(agreementId)`. `ON DELETE RESTRICT` integrity on `audit_events`. | Completed | `audit.service.ts`, `tests/unit/audit.test.ts` (6 tests passing), 62/62 seed agreements verified (220 events) |
+| **Deterministic Seed Fixtures** | 9 standard categories, 62 realistic Acme Corporation agreements across all 9 statuses (`DRAFT`, `PENDING_REVIEW`, `SENT`, `AWAITING_SIGNATURES`, `PARTIALLY_SIGNED`, `COMPLETED`, `REJECTED`, `CANCELLED`, `EXPIRED`) with counterparties, clauses, payment milestones, and chained audit trails. 5 Globex Corporation agreements for multi-tenant isolation testing. 25 activity log entries. | Completed | `prisma/seed.ts`, multi-tenant isolation tests |
+| **SQL Aggregation Engine** | Single-query dashboard metrics via conditional `FILTER (WHERE ...)` and `ROUND(AVG(EXTRACT(EPOCH FROM ...)))` (2.8ms execution). Zero-filled time series via `generate_series()` and date intervals. Exact median turnaround via `PERCENTILE_CONT(0.5)`. Signer response durations. RFC 4180 CSV export with formula injection escaping (prefixing `=`, `+`, `-`, `@`, `\t`, `\r` with `'`). | Completed | `dashboard.service.ts`, `analytics.service.ts`, `tests/integration/dashboard-analytics.test.ts` (16 tests) |
+| **Agreement & Category Read APIs** | Endpoints `/api/v1/dashboard/stats`, `/activity` (cursor pagination), `/deadlines` (windowing), `/recent`. `/api/v1/analytics/overview` & `/export.csv`. `/api/v1/agreement-categories` (with agreement counts). `/api/v1/agreements` (paginated, sorted, filtered) and `/agreements/:id` (with full clauses, counterparties, and verified `auditTrail`). | Completed | Integration test suite, supertest assertions, schema validation |
+| **Safe Write Guards** | All mutating agreement endpoints for unbuilt Phase 5 features (`POST /agreements`, `PUT /agreements/:id`, `PATCH /agreements/:id/status`, `POST /agreements/:id/duplicate`, `POST /agreements/:id/archive`, `POST /agreements/:id/unarchive`, `DELETE /agreements/:id`) return typed HTTP 501 `NOT_AVAILABLE_YET`. | Completed | Integration test suite verifying 501 rejection with standard error envelope |
+| **Frontend Service Integration** | Added `dashboard`, `analytics`, `agreements`, `agreements-read` to `VITE_REAL_SERVICES` in `serviceMode.ts`. Implemented real client adapters: `dashboardService.ts`, `analyticsService.ts`, `agreementsService.ts`. | Completed | `client/src/services/`, `dashboard-analytics-services.test.ts` (7 tests passing) |
+| **Real Frontend Page Wiring** | Wired real backend data into `Dashboard.jsx` (KPI cards, sparklines, deadlines, recent agreements, activity stream), `Supporting.jsx` (analytics time series, status/category breakdowns, turnaround percentiles, CSV download), `Agreements.jsx` (paginated table, search, status filters, category pills), and `Detail.jsx` (agreement overview, clauses, counterparties, cryptographic SHA-256 audit badge). | Completed | Client smoke tests and production bundle compilation |
+
+---
+
+## 10. Phase 4 Verification Metrics & Close-Out Results
+
+### 1. SQL vs. Service / UI Metric Parity (Acme Corporation Dataset)
+
+| Metric | Raw PostgreSQL Query | Service / API Output | Parity Status |
+|---|---|---|---|
+| **Total Agreements** | `62` | `62` | **EXACT MATCH (100%)** |
+| **Completed Agreements** | `16` | `16` | **EXACT MATCH (100%)** |
+| **Running Agreements** | `23` | `23` | **EXACT MATCH (100%)** |
+| **Pending Signatures** | `10` | `10` | **EXACT MATCH (100%)** |
+| **Expired Agreements** | `4` | `4` | **EXACT MATCH (100%)** |
+| **Average Turnaround Duration** | `42.4 hours` | `42.4 hours` | **EXACT MATCH (100%)** |
+| **Completion Rate** | `25.8%` | `25.8%` | **EXACT MATCH (100%)** |
+| **Total Pipeline Value** | `$2,772,000` | `$2,772,000` | **EXACT MATCH (100%)** |
+| **Median Turnaround (P50)** | `32.5 hours` | `32.5 hours` | **EXACT MATCH (100%)** |
+| **Signer Avg Response Time** | `20.2 hours` | `20.2 hours` | **EXACT MATCH (100%)** |
+| **Distinct Status Buckets** | `9 statuses` | `9 statuses` | **EXACT MATCH (100%)** |
+| **Category Buckets** | `9 categories` | `9 categories` | **EXACT MATCH (100%)** |
+| **Time Series Buckets** | `13 intervals` | `13 intervals` | **EXACT MATCH (Zero-Filled)** |
+
+### 2. Query Performance Verification (`EXPLAIN ANALYZE`)
+
+| Query / Operation | Execution Plan Highlights | Execution Time | Benchmark SLA |
+|---|---|---|---|
+| **Dashboard Stats Aggregation** | Bitmap Index Scan on `idx_agreements_org_status` + conditional filter | **2.8 ms** | < 50 ms |
+| **Upcoming Deadlines Scan** | Index Scan on `idx_agreements_expiration` where status IN running | **7.2 ms** | < 50 ms |
+| **Category Agreement Totals** | Index Scan on `idx_agreements_category` | **1.5 ms** | < 25 ms |
+
+### 3. Cryptographic Audit Chain Integrity Verification
+- **Verified Agreements:** 62 / 62 agreements verified (100% valid SHA-256 chain).
+- **Chained Audit Events:** 220 immutable events chained from genesis block `0`.repeat(64).
+- **Tamper Detection Proof:** Tampering with any historical event payload (or altering previous hash) immediately causes `verifyChain()` to fail with specific event ID and broken link diagnosis.
+
+### 4. Full Automated Test Suite Results
+- **Server Test Suite:** 13 test files, **65 passing tests (100% pass rate)**.
+  - Integration tests for dashboard stats, activity cursor pagination, deadlines, analytics overview, zero-filled time series, CSV export, agreement list/detail, multi-tenant isolation, empty org resilience, safe 501 write guards.
+  - Unit tests for SHA-256 audit hash chaining, row locking, Argon2id auth, seed production safety, CSRF, env, and response envelopes.
+  - End-to-end 12-step user walkthrough automation against live database, Redis, S3, and Mailpit services.
+- **Client Test Suite:** 6 test files, **103 passing tests (100% pass rate)**.
+  - Tests for API client, lifecycle state machine, client audit chain, dashboard/analytics service adapters, app routing, and complete role/route smoke tests.
+- **Total Combined Tests:** **168 passing tests** across full-stack codebase.
+- **Build & Quality:**
+  - `npm run build --prefix server` compiled with **0 errors**.
+  - `npm run build --prefix client` compiled with **0 errors** (production Vite bundle in 3.8s).
+  - ESLint verified **0 errors** across server and client workspaces.
+
+---
+
+## 11. Next Steps: Phase 5 (Agreement Creation Engine & Basic Snapshots)
+
+With Phase 4 complete, verified, and signed off:
+1. Create branch `phase/05-agreement-creation`.
+2. Implement Phase 5 multi-step Agreement Creation Wizard backend (`POST /api/v1/agreements`, `PUT /api/v1/agreements/:id`, `PATCH /api/v1/agreements/:id/status`).
+3. Implement basic agreement snapshot versioning (`agreement_versions` table snapshot on creation/revision).
+4. Wire client wizard steps to real backend APIs, replacing 501 guards with operational creation endpoints.

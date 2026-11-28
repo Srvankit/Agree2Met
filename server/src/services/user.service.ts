@@ -181,7 +181,7 @@ export class UserService {
   }
 
   /**
-   * Export all user profile, organization, and session data (GDPR portability).
+   * Export all user profile, organization, and session data (account data export).
    */
   public async exportUserData(userId: string) {
     const user = await prisma.user.findUnique({
